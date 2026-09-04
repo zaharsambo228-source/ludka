@@ -1,5 +1,9 @@
 --!strict
 
+local BalanceConfigModule = script.Parent:FindFirstChild("BalanceConfig")
+assert(BalanceConfigModule and BalanceConfigModule:IsA("ModuleScript"), "Shared.BalanceConfig is missing")
+local BalanceConfig = require(BalanceConfigModule)
+
 local RoomDefinitions = {
 	ReactorRun = table.freeze({
 		Id = "ReactorRun",
@@ -13,8 +17,8 @@ local RoomDefinitions = {
 		HazardMinZ = -5,
 		HazardMaxZ = 10,
 		HazardTravelX = 27,
-		PickupHoldDuration = 0.2,
-		DepositHoldDuration = 0.25,
+		PickupHoldDuration = BalanceConfig.Room.ReactorPickupHoldDuration,
+		DepositHoldDuration = BalanceConfig.Room.ReactorDepositHoldDuration,
 		CarryOffset = CFrame.new(1.8, 0.4, -1.8),
 	}),
 	SignalSequence = table.freeze({
@@ -26,7 +30,7 @@ local RoomDefinitions = {
 		StartZ = -15,
 		PanelZ = 10,
 		PanelSpacing = 8,
-		ActivationHoldDuration = 0.1,
+		ActivationHoldDuration = BalanceConfig.Room.SignalActivationHoldDuration,
 	}),
 	LaserGrid = table.freeze({
 		Id = "LaserGrid",
@@ -36,7 +40,7 @@ local RoomDefinitions = {
 		ArenaSize = Vector3.new(52, 1, 78),
 		StartZ = -33,
 		ExitZ = 33,
-		ExitHoldDuration = 0.15,
+		ExitHoldDuration = BalanceConfig.Room.LaserExitHoldDuration,
 	}),
 }
 

@@ -27,14 +27,14 @@ local DEFAULT_PROFILE: PlayerProfile = {
 	BrainrotInstances = {},
 	CollectionIndex = {},
 	Farm = {
-		UnlockedSlots = 2,
+		UnlockedSlots = GameConfig.Farm.DefaultUnlockedSlots,
 		Slots = {},
 		LastCollectTimestamp = 0,
 		AccruedCoins = 0,
 	},
 	Upgrades = {
-		FarmEfficiency = 1,
-		OfflineStorage = 1,
+		FarmEfficiency = BalanceConfig.Farm.InitialEfficiencyLevel,
+		OfflineStorage = BalanceConfig.Farm.InitialOfflineStorageLevel,
 	},
 	Stats = {
 		Runs = 0,
@@ -44,6 +44,7 @@ local DEFAULT_PROFILE: PlayerProfile = {
 	Settings = {},
 	ClaimReceipts = {},
 	DustReceipts = {},
+	OperationReceipts = {},
 }
 
 local function deepCopy<T>(value: T): T
@@ -103,6 +104,10 @@ local MIGRATIONS: { [number]: (profile: { [any]: any }) -> () } = {
 	[3] = function(profile)
 		profile.DustReceipts = profile.DustReceipts or {}
 		profile.SchemaVersion = 4
+	end,
+	[4] = function(profile)
+		profile.OperationReceipts = profile.OperationReceipts or {}
+		profile.SchemaVersion = 5
 	end,
 }
 
@@ -184,6 +189,7 @@ function ProfileSchema.Validate(profile: PlayerProfile): (boolean, string?)
 		or type(profile.Settings) ~= "table"
 		or type(profile.ClaimReceipts) ~= "table"
 		or type(profile.DustReceipts) ~= "table"
+		or type(profile.OperationReceipts) ~= "table"
 	then
 		return false, "Profile contains an invalid root collection"
 	end
@@ -198,6 +204,34 @@ function ProfileSchema.Validate(profile: PlayerProfile): (boolean, string?)
 		then
 			return false, `Profile contains an invalid Dust receipt: {tostring(receiptKey)}`
 		end
+	end
+
+	local operationReceiptCount = 0
+	for requestId, receipt in profile.OperationReceipts do
+		operationReceiptCount += 1
+		if type(requestId) ~= "string"
+			or requestId == ""
+			or #requestId > GameConfig.Security.MaxRemoteStringLength
+			or type(receipt) ~= "table"
+			or (receipt.Kind ~= "Collect" and receipt.Kind ~= "Upgrade")
+			or type(receipt.Subject) ~= "string"
+			or receipt.Subject == ""
+			or #receipt.Subject > GameConfig.Security.MaxRemoteStringLength
+			or not isNonNegativeInteger(receipt.Amount)
+			or not isNonNegativeInteger(receipt.CreatedAt)
+			or (receipt.TargetLevel ~= nil and not isNonNegativeInteger(receipt.TargetLevel))
+		then
+			return false, `Profile contains an invalid operation receipt: {tostring(requestId)}`
+		end
+		if receipt.Kind == "Collect" and (receipt.Subject ~= "Farm" or receipt.TargetLevel ~= nil) then
+			return false, `Profile contains an invalid Collect receipt: {requestId}`
+		end
+		if receipt.Kind == "Upgrade" and receipt.TargetLevel == nil then
+			return false, `Profile contains an invalid Upgrade receipt: {requestId}`
+		end
+	end
+	if operationReceiptCount > GameConfig.PlayerData.MaxOperationReceipts then
+		return false, "Profile contains too many operation receipts"
 	end
 
 	for instanceId, instance in profile.BrainrotInstances do
@@ -295,9 +329,9 @@ function ProfileSchema.Validate(profile: PlayerProfile): (boolean, string?)
 	then
 		return false, "Profile contains invalid Upgrade data"
 	end
-	if profile.Upgrades.FarmEfficiency < 1
+	if profile.Upgrades.FarmEfficiency < BalanceConfig.Farm.InitialEfficiencyLevel
 		or profile.Upgrades.FarmEfficiency > #BalanceConfig.Farm.EfficiencyMultipliers
-		or profile.Upgrades.OfflineStorage < 1
+		or profile.Upgrades.OfflineStorage < BalanceConfig.Farm.InitialOfflineStorageLevel
 		or profile.Upgrades.OfflineStorage > #BalanceConfig.Farm.OfflineStorageSeconds
 	then
 		return false, "Profile contains an out-of-range Upgrade level"

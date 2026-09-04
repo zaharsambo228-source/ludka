@@ -86,6 +86,7 @@ type RoomSession = {
 
 local ROOM_CONFIG = GameConfig.Room
 local runService: any = nil
+local antiExploitService: any = nil
 local roomActionRemote: RemoteEvent? = nil
 local uiEventRemote: RemoteEvent? = nil
 local activeRoomsFolder: Folder? = nil
@@ -94,6 +95,17 @@ local roomRandom = Random.new()
 local lastRoomTypeByRunId: { [string]: string } = {}
 local initialized = false
 local started = false
+
+local ROOM_ACTION_KEYS: { [string]: boolean } = {
+	Action = true,
+	RunId = true,
+	RoomId = true,
+	CellId = true,
+	PanelId = true,
+}
+local PICKUP_ACTION_KEYS: { [string]: boolean } = { Action = true, RunId = true, RoomId = true, CellId = true }
+local ROOM_BASE_ACTION_KEYS: { [string]: boolean } = { Action = true, RunId = true, RoomId = true }
+local SIGNAL_ACTION_KEYS: { [string]: boolean } = { Action = true, RunId = true, RoomId = true, PanelId = true }
 
 local roomStartedEvent = Instance.new("BindableEvent")
 local roomProgressedEvent = Instance.new("BindableEvent")
@@ -405,8 +417,11 @@ function RoomService.Init()
 	assert(not initialized, "RoomService.Init called more than once")
 
 	local runServiceModule = script.Parent:FindFirstChild("RunService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
 	assert(runServiceModule and runServiceModule:IsA("ModuleScript"), "Services.RunService is missing")
+	assert(antiExploitModule and antiExploitModule:IsA("ModuleScript"), "Services.AntiExploitService is missing")
 	runService = require(runServiceModule)
+	antiExploitService = require(antiExploitModule)
 
 	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 	assert(remotes and remotes:IsA("Folder"), "ReplicatedStorage.Remotes is missing")
@@ -933,7 +948,33 @@ function RoomService.Cancel(runId: string, roomId: string, reason: string): (Roo
 end
 
 local function handleRemoteAction(player: Player, payload: any)
-	local action = if type(payload) == "table" and type(payload.Action) == "string" then payload.Action else "Unknown"
+	local action = if type(payload) == "table" and type(payload.Action) == "string" and #payload.Action <= 64 then payload.Action else "Unknown"
+	if not antiExploitService.AllowAction(player, "RoomAction") then
+		sendActionResult(player, action, false, "RATE_LIMITED", nil)
+		return
+	end
+	local valid = antiExploitService.ValidatePayload(payload, ROOM_ACTION_KEYS)
+	if not valid
+		or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.Action else nil)
+		or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.RunId else nil)
+		or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.RoomId else nil)
+		or (type(payload) == "table" and payload.CellId ~= nil and not antiExploitService.IsBoundedString(payload.CellId))
+		or (type(payload) == "table" and payload.PanelId ~= nil and not antiExploitService.IsBoundedString(payload.PanelId))
+	then
+		antiExploitService.RecordRejection(player, "RoomAction", "INVALID_PAYLOAD")
+		sendActionResult(player, action, false, "INVALID_PAYLOAD", nil)
+		return
+	end
+	local exactKeys = if action == "PickupCell"
+		then PICKUP_ACTION_KEYS
+		elseif action == "DepositCell" or action == "ReachExit" then ROOM_BASE_ACTION_KEYS
+		elseif action == "ActivateSignal" then SIGNAL_ACTION_KEYS
+		else nil
+	if exactKeys == nil or not antiExploitService.ValidatePayload(payload, exactKeys) then
+		antiExploitService.RecordRejection(player, "RoomAction", "UNKNOWN_ACTION_OR_FIELDS")
+		sendActionResult(player, action, false, "INVALID_PAYLOAD", nil)
+		return
+	end
 	local callSuccess, success, snapshot, actionError = pcall(RoomService.Action, player, payload)
 	if not callSuccess then
 		warn(`[RoomService] Action error for {player.UserId}: {tostring(success)}`)
@@ -988,13 +1029,23 @@ function RoomService.StartService()
 		local session = activeRoom
 		if session ~= nil and session.RunId == run.RunId then
 			resetCarriedCellForUser(session, userId)
-			if session.RoomType == "LaserGrid" and session.Active then
-				local difficulty = BalanceConfig.Rooms.LaserGrid.Tiers[session.Tier]
+			if session.Active then
 				local remainingParticipants = runService.GetParticipants(session.RunId) or {}
-				session.RequiredCells = math.max(1, math.ceil(#remainingParticipants * difficulty.CompletionRatio))
-				LaserGridBuilder.Update(session.Build, session.DepositedCells, session.RequiredCells, session.LastDisplayedSecond)
+				if #remainingParticipants == 0 then return end
+				local difficulty = BalanceConfig.Rooms[session.RoomType].Tiers[session.Tier]
+				if session.RoomType == "ReactorRun" then
+					session.RequiredCells = difficulty.BaseCells
+						+ math.max(#remainingParticipants - 1, 0) * difficulty.CellsPerAdditionalPlayer
+					ReactorBuilder.UpdateProgress(session.Build, session.DepositedCells, session.RequiredCells)
+					ReactorBuilder.UpdateTimer(session.Build, session.LastDisplayedSecond, session.DepositedCells, session.RequiredCells)
+				elseif session.RoomType == "LaserGrid" then
+					session.RequiredCells = math.max(1, math.ceil(#remainingParticipants * difficulty.CompletionRatio))
+					LaserGridBuilder.Update(session.Build, session.DepositedCells, session.RequiredCells, session.LastDisplayedSecond)
+				end
 				if session.DepositedCells >= session.RequiredCells then
-					RoomService.Resolve(session.RunId, session.RoomId, true, "REMAINING_TEAM_ESCAPED")
+					RoomService.Resolve(session.RunId, session.RoomId, true, "REMAINING_TEAM_COMPLETED")
+				else
+					sendRoomEvent(session, "RoomProgress", makeSnapshot(session), { ParticipantLeftUserId = userId })
 				end
 			end
 		end

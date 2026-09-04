@@ -8,6 +8,7 @@ type PlayerProfile = any
 -- so leave/rejoin tests can verify persistence without DataStore API access.
 local MOCK_RECORDS: { [number]: PlayerProfile } = {}
 local MOCK_LOCKS: { [number]: string } = {}
+local MOCK_RELEASED_BY: { [number]: string } = {}
 
 local MemoryBackend = {}
 MemoryBackend.__index = MemoryBackend
@@ -30,6 +31,7 @@ function MemoryBackend:Load(userId: number): (PlayerProfile?, string?)
 	end
 
 	MOCK_LOCKS[userId] = self._sessionId
+	MOCK_RELEASED_BY[userId] = nil
 	MOCK_RECORDS[userId] = ProfileSchema.Clone(profile)
 	return ProfileSchema.Clone(profile), nil
 end
@@ -49,12 +51,16 @@ function MemoryBackend:Save(userId: number, profile: PlayerProfile): (boolean, s
 end
 
 function MemoryBackend:Release(userId: number, profile: PlayerProfile): (boolean, string?)
+	if MOCK_LOCKS[userId] == nil and MOCK_RELEASED_BY[userId] == self._sessionId then
+		return true, nil
+	end
 	local success, saveError = self:Save(userId, profile)
 	if not success then
 		return false, saveError
 	end
 
 	MOCK_LOCKS[userId] = nil
+	MOCK_RELEASED_BY[userId] = self._sessionId
 	return true, nil
 end
 

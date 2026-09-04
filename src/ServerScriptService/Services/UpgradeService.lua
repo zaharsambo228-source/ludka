@@ -1,6 +1,7 @@
 --!strict
 
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RobloxRunService = game:GetService("RunService")
 
@@ -8,17 +9,26 @@ local Shared = ReplicatedStorage:FindFirstChild("Shared")
 assert(Shared and Shared:IsA("Folder"), "ReplicatedStorage.Shared is missing")
 
 local UpgradeDefinitionsModule = Shared:FindFirstChild("UpgradeDefinitions")
+local GameConfigModule = Shared:FindFirstChild("GameConfig")
 assert(
 	UpgradeDefinitionsModule and UpgradeDefinitionsModule:IsA("ModuleScript"),
 	"Shared.UpgradeDefinitions is missing"
 )
+assert(GameConfigModule and GameConfigModule:IsA("ModuleScript"), "Shared.GameConfig is missing")
 local UpgradeDefinitions = require(UpgradeDefinitionsModule)
+local GameConfig = require(GameConfigModule)
 
 local upgradeInternal = script.Parent:FindFirstChild("Upgrade")
 assert(upgradeInternal and upgradeInternal:IsA("Folder"), "Services.Upgrade is missing")
 local StateBuilderModule = upgradeInternal:FindFirstChild("StateBuilder")
 assert(StateBuilderModule and StateBuilderModule:IsA("ModuleScript"), "Upgrade.StateBuilder is missing")
 local StateBuilder = require(StateBuilderModule)
+
+local playerDataInternal = script.Parent:FindFirstChild("PlayerData")
+assert(playerDataInternal and playerDataInternal:IsA("Folder"), "Services.PlayerData is missing")
+local OperationReceiptStoreModule = playerDataInternal:FindFirstChild("OperationReceiptStore")
+assert(OperationReceiptStoreModule and OperationReceiptStoreModule:IsA("ModuleScript"), "PlayerData.OperationReceiptStore is missing")
+local OperationReceiptStore = require(OperationReceiptStoreModule)
 
 local farmInternal = script.Parent:FindFirstChild("Farm")
 assert(farmInternal and farmInternal:IsA("Folder"), "Services.Farm is missing")
@@ -28,6 +38,8 @@ local PlotBuilder = require(PlotBuilderModule)
 
 local playerDataService: any = nil
 local farmService: any = nil
+local runService: any = nil
+local antiExploitService: any = nil
 local initialized = false
 local started = false
 local purchasingPlayers: { [Player]: boolean } = {}
@@ -104,7 +116,14 @@ local function connectPlayerPlot(player: Player)
 			if triggeringPlayer ~= player then
 				return
 			end
+			if not antiExploitService.AllowAction(triggeringPlayer, "UpgradeAction") then
+				return
+			end
 			if not isNearTerminal(triggeringPlayer, promptTerminal, purchasePrompt.MaxActivationDistance + 3) then
+				antiExploitService.RecordRejection(triggeringPlayer, "UpgradeAction", "TOO_FAR_FROM_OWN_TERMINAL")
+				return
+			end
+			if runService.GetRunForPlayer(triggeringPlayer) ~= nil then
 				return
 			end
 
@@ -123,11 +142,17 @@ function UpgradeService.Init()
 
 	local playerDataModule = script.Parent:FindFirstChild("PlayerDataService")
 	local farmServiceModule = script.Parent:FindFirstChild("FarmService")
+	local runServiceModule = script.Parent:FindFirstChild("RunService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
 	assert(playerDataModule and playerDataModule:IsA("ModuleScript"), "Services.PlayerDataService is missing")
 	assert(farmServiceModule and farmServiceModule:IsA("ModuleScript"), "Services.FarmService is missing")
+	assert(runServiceModule and runServiceModule:IsA("ModuleScript"), "Services.RunService is missing")
+	assert(antiExploitModule and antiExploitModule:IsA("ModuleScript"), "Services.AntiExploitService is missing")
 
 	playerDataService = require(playerDataModule)
 	farmService = require(farmServiceModule)
+	runService = require(runServiceModule)
+	antiExploitService = require(antiExploitModule)
 	initialized = true
 end
 
@@ -175,10 +200,14 @@ function UpgradeService.GetAllUpgradeStates(player: Player): ({ [string]: any }?
 	return states, nil
 end
 
-function UpgradeService.PurchaseUpgrade(player: Player, upgradeId: string): (boolean, any?, string?)
+function UpgradeService.PurchaseUpgrade(player: Player, upgradeId: string, requestId: string?): (boolean, any?, string?)
 	assert(initialized, "UpgradeService.Init must run before use")
 	if UpgradeDefinitions[upgradeId] == nil then
 		return false, nil, "UNKNOWN_UPGRADE_ID"
+	end
+	local operationId = requestId or HttpService:GenerateGUID(false)
+	if type(operationId) ~= "string" or operationId == "" or #operationId > GameConfig.Security.MaxRemoteStringLength then
+		return false, nil, "INVALID_REQUEST_ID"
 	end
 	if purchasingPlayers[player] then
 		return false, nil, "PURCHASE_IN_PROGRESS"
@@ -186,8 +215,17 @@ function UpgradeService.PurchaseUpgrade(player: Player, upgradeId: string): (boo
 	purchasingPlayers[player] = true
 
 	local purchasedState: any = nil
+	local replayed = false
 	local updated, updateError = playerDataService.UpdateProfile(player, function(profile)
 		local state = StateBuilder.Build(profile, UpgradeDefinitions[upgradeId])
+		local receipt, receiptError = OperationReceiptStore.Find(profile, operationId, "Upgrade", upgradeId)
+		if receiptError ~= nil then return false, receiptError end
+		if receipt ~= nil then
+			if state.CurrentLevel < receipt.TargetLevel then return false, "OPERATION_RECEIPT_CONFLICT" end
+			purchasedState = state
+			replayed = true
+			return false, "OPERATION_ALREADY_APPLIED"
+		end
 		if state.IsMaxed then
 			return false, "MAX_LEVEL"
 		end
@@ -202,15 +240,29 @@ function UpgradeService.PurchaseUpgrade(player: Player, upgradeId: string): (boo
 		farmService.CheckpointProfileProduction(profile, os.time())
 		profile.Coins -= state.Cost
 		StateBuilder.ApplyLevel(profile, upgradeId, state.NextLevel)
+		OperationReceiptStore.Record(profile, operationId, {
+			Kind = "Upgrade",
+			Subject = upgradeId,
+			Amount = state.Cost,
+			TargetLevel = state.NextLevel,
+			CreatedAt = os.time(),
+		}, GameConfig.PlayerData.MaxOperationReceipts)
 		purchasedState = StateBuilder.Build(profile, UpgradeDefinitions[upgradeId])
 		return true, nil
 	end)
 
 	purchasingPlayers[player] = nil
-	if not updated then
+	if not updated and not (replayed and updateError == "OPERATION_ALREADY_APPLIED") then
 		refreshPlayerTerminals(player)
 		return false, nil, updateError
 	end
+	local saved, saveError = playerDataService.SavePlayer(player)
+	if not saved then
+		warn(`[UpgradeService] Purchase {operationId} could not be confirmed for {player.UserId}: {saveError}`)
+		refreshPlayerTerminals(player)
+		return false, nil, "TRANSACTION_SAVE_FAILED"
+	end
+	if replayed then return true, purchasedState, nil end
 
 	farmService.RebuildPlayerPlot(player)
 	refreshPlayerTerminals(player)
@@ -222,7 +274,7 @@ function UpgradeService.DebugPurchaseUpgrade(player: Player, upgradeId: string):
 	if not RobloxRunService:IsStudio() then
 		return false, nil, "DEBUG_ONLY"
 	end
-	return UpgradeService.PurchaseUpgrade(player, upgradeId)
+	return UpgradeService.PurchaseUpgrade(player, upgradeId, HttpService:GenerateGUID(false))
 end
 
 return table.freeze(UpgradeService)

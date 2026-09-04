@@ -1,5 +1,8 @@
 --!strict
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+
 local BuilderUtilModule = script.Parent:FindFirstChild("BuilderUtil")
 assert(BuilderUtilModule and BuilderUtilModule:IsA("ModuleScript"), "Room.BuilderUtil is missing")
 local BuilderUtil = require(BuilderUtilModule)
@@ -68,7 +71,7 @@ function SignalSequenceBuilder.Create(
 		prompt.ActionText = "Activate"
 		prompt.ObjectText = tostring(index)
 		prompt.HoldDuration = definition.ActivationHoldDuration
-		prompt.MaxActivationDistance = 10
+		prompt.MaxActivationDistance = BalanceConfig.Room.PromptMaxActivationDistance
 		prompt.RequiresLineOfSight = false
 		prompt.Enabled = false
 		prompt.Parent = panel
@@ -97,7 +100,7 @@ function SignalSequenceBuilder.BeginInput(build: any)
 end
 
 function SignalSequenceBuilder.Update(build: any, position: number, required: number, mistakes: number, remaining: number)
-	setLabel(build.ObjectiveSign, "ObjectiveGui", `SIGNAL SEQUENCE\nProgress {position} / {required}  •  Mistakes {mistakes}\n{remaining}s`, if remaining <= 10 then Color3.fromRGB(255, 102, 102) else nil)
+	setLabel(build.ObjectiveSign, "ObjectiveGui", `SIGNAL SEQUENCE\nProgress {position} / {required}  •  Mistakes {mistakes}\n{remaining}s`, if remaining <= BalanceConfig.Room.CriticalTimerSeconds then Color3.fromRGB(255, 102, 102) else nil)
 end
 
 return table.freeze(SignalSequenceBuilder)

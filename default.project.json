@@ -19,11 +19,14 @@
         "FarmAction": {
           "$className": "RemoteEvent"
         },
-        "InventoryAction": {
-          "$className": "RemoteEvent"
-        },
         "UIEvent": {
           "$className": "RemoteEvent"
+        },
+        "UpgradeAction": {
+          "$className": "RemoteEvent"
+        },
+        "GetPlayerSnapshot": {
+          "$className": "RemoteFunction"
         }
       },
       "Shared": {
@@ -67,6 +70,13 @@
           "ResetOnSpawn": false
         }
       },
+      "FailureUI": {
+        "$className": "ScreenGui",
+        "$properties": {
+          "Enabled": false,
+          "ResetOnSpawn": false
+        }
+      },
       "InventoryUI": {
         "$className": "ScreenGui",
         "$properties": {
@@ -82,6 +92,13 @@
         }
       },
       "UpgradeUI": {
+        "$className": "ScreenGui",
+        "$properties": {
+          "Enabled": false,
+          "ResetOnSpawn": false
+        }
+      },
+      "TutorialUI": {
         "$className": "ScreenGui",
         "$properties": {
           "Enabled": false,

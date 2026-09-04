@@ -1,5 +1,8 @@
 --!strict
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+
 local BuilderUtilModule = script.Parent:FindFirstChild("BuilderUtil")
 assert(BuilderUtilModule and BuilderUtilModule:IsA("ModuleScript"), "Room.BuilderUtil is missing")
 local BuilderUtil = require(BuilderUtilModule)
@@ -11,7 +14,7 @@ local function updateLabel(build: any, finishers: number, required: number, rema
 	local label = if gui ~= nil then gui:FindFirstChild("Label") else nil
 	if label ~= nil and label:IsA("TextLabel") then
 		label.Text = `LASER GRID\nPlayers escaped {finishers} / {required}\n{remaining}s`
-		label.TextColor3 = if remaining <= 10 then Color3.fromRGB(255, 102, 102) else Color3.new(1, 1, 1)
+		label.TextColor3 = if remaining <= BalanceConfig.Room.CriticalTimerSeconds then Color3.fromRGB(255, 102, 102) else Color3.new(1, 1, 1)
 	end
 end
 
@@ -71,7 +74,7 @@ function LaserGridBuilder.Create(
 	exitPrompt.ActionText = "Escape"
 	exitPrompt.ObjectText = "Safe Zone"
 	exitPrompt.HoldDuration = definition.ExitHoldDuration
-	exitPrompt.MaxActivationDistance = 10
+	exitPrompt.MaxActivationDistance = BalanceConfig.Room.PromptMaxActivationDistance
 	exitPrompt.RequiresLineOfSight = false
 	exitPrompt.Parent = exit
 	BuilderUtil.CreateBillboard(exit, "ExitGui", "SAFE EXIT", Vector3.new(0, 3, 0), UDim2.fromOffset(240, 70))

@@ -1,6 +1,7 @@
 --!strict
 
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RobloxRunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -23,13 +24,18 @@ local farmInternal = script.Parent:FindFirstChild("Farm")
 assert(farmInternal and farmInternal:IsA("Folder"), "Services.Farm is missing")
 local PlotBuilderModule = farmInternal:FindFirstChild("PlotBuilder")
 local ProductionCalculatorModule = farmInternal:FindFirstChild("ProductionCalculator")
+local playerDataInternal = script.Parent:FindFirstChild("PlayerData")
 assert(PlotBuilderModule and PlotBuilderModule:IsA("ModuleScript"), "Farm.PlotBuilder is missing")
 assert(
 	ProductionCalculatorModule and ProductionCalculatorModule:IsA("ModuleScript"),
 	"Farm.ProductionCalculator is missing"
 )
+assert(playerDataInternal and playerDataInternal:IsA("Folder"), "Services.PlayerData is missing")
+local OperationReceiptStoreModule = playerDataInternal:FindFirstChild("OperationReceiptStore")
+assert(OperationReceiptStoreModule and OperationReceiptStoreModule:IsA("ModuleScript"), "PlayerData.OperationReceiptStore is missing")
 local PlotBuilder = require(PlotBuilderModule)
 local ProductionCalculator = require(ProductionCalculatorModule)
+local OperationReceiptStore = require(OperationReceiptStoreModule)
 
 type PlayerPlotState = {
 	Index: number,
@@ -38,6 +44,8 @@ type PlayerPlotState = {
 
 local FARM_CONFIG = GameConfig.Farm
 local playerDataService: any = nil
+local runService: any = nil
+local antiExploitService: any = nil
 local farmPlotsFolder: Folder? = nil
 local playerPlots: { [Player]: PlayerPlotState } = {}
 local usedPlotIndexes: { [number]: boolean } = {}
@@ -90,7 +98,14 @@ local function connectCollectPrompt(player: Player, plot: Model)
 		if triggeringPlayer ~= player then
 			return
 		end
+		if not antiExploitService.AllowAction(triggeringPlayer, "FarmAction") then
+			return
+		end
 		if not isNearTerminal(triggeringPlayer, terminal, prompt.MaxActivationDistance + 3) then
+			antiExploitService.RecordRejection(triggeringPlayer, "FarmAction", "TOO_FAR_FROM_OWN_TERMINAL")
+			return
+		end
+		if runService.GetRunForPlayer(triggeringPlayer) ~= nil then
 			return
 		end
 
@@ -157,8 +172,14 @@ function FarmService.Init()
 	assert(not initialized, "FarmService.Init called more than once")
 
 	local playerDataModule = script.Parent:FindFirstChild("PlayerDataService")
+	local runServiceModule = script.Parent:FindFirstChild("RunService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
 	assert(playerDataModule and playerDataModule:IsA("ModuleScript"), "Services.PlayerDataService is missing")
+	assert(runServiceModule and runServiceModule:IsA("ModuleScript"), "Services.RunService is missing")
+	assert(antiExploitModule and antiExploitModule:IsA("ModuleScript"), "Services.AntiExploitService is missing")
 	playerDataService = require(playerDataModule)
+	runService = require(runServiceModule)
+	antiExploitService = require(antiExploitModule)
 
 	local folder = Workspace:FindFirstChild("FarmPlots")
 	assert(folder and folder:IsA("Folder"), "Workspace.FarmPlots is missing")
@@ -193,7 +214,7 @@ function FarmService.Start()
 
 	task.spawn(function()
 		while started do
-			task.wait(1)
+			task.wait(BalanceConfig.Farm.TerminalRefreshSeconds)
 			for player, plotState in playerPlots do
 				local profile = playerDataService.GetProfile(player)
 				if profile ~= nil then
@@ -343,15 +364,27 @@ function FarmService.CheckpointProfileProduction(profile: any, now: number): any
 	return ProductionCalculator.Checkpoint(profile, BrainrotDefinitions, BalanceConfig, now)
 end
 
-function FarmService.CollectCoins(player: Player): (number?, string?)
+function FarmService.CollectCoins(player: Player, requestId: string?): (number?, string?)
 	assert(initialized, "FarmService.Init must run before use")
+	local operationId = requestId or HttpService:GenerateGUID(false)
+	if type(operationId) ~= "string" or operationId == "" or #operationId > GameConfig.Security.MaxRemoteStringLength then
+		return nil, "INVALID_REQUEST_ID"
+	end
 	if collectingPlayers[player] then
 		return nil, "COLLECT_IN_PROGRESS"
 	end
 	collectingPlayers[player] = true
 
 	local collectedAmount = 0
+	local replayed = false
 	local updated, updateError = playerDataService.UpdateProfile(player, function(profile)
+		local receipt, receiptError = OperationReceiptStore.Find(profile, operationId, "Collect", "Farm")
+		if receiptError ~= nil then return false, receiptError end
+		if receipt ~= nil then
+			collectedAmount = receipt.Amount
+			replayed = true
+			return false, "OPERATION_ALREADY_APPLIED"
+		end
 		local snapshot = ProductionCalculator.Checkpoint(
 			profile,
 			BrainrotDefinitions,
@@ -361,13 +394,26 @@ function FarmService.CollectCoins(player: Player): (number?, string?)
 		collectedAmount = snapshot.ClaimableCoins
 		profile.Farm.AccruedCoins = math.max(0, profile.Farm.AccruedCoins - collectedAmount)
 		profile.Coins += collectedAmount
+		OperationReceiptStore.Record(profile, operationId, {
+			Kind = "Collect",
+			Subject = "Farm",
+			Amount = collectedAmount,
+			TargetLevel = nil,
+			CreatedAt = os.time(),
+		}, GameConfig.PlayerData.MaxOperationReceipts)
 		return true, nil
 	end)
 
 	collectingPlayers[player] = nil
-	if not updated then
+	if not updated and not (replayed and updateError == "OPERATION_ALREADY_APPLIED") then
 		return nil, updateError
 	end
+	local saved, saveError = playerDataService.SavePlayer(player)
+	if not saved then
+		warn(`[FarmService] Collect {operationId} could not be confirmed for {player.UserId}: {saveError}`)
+		return nil, "TRANSACTION_SAVE_FAILED"
+	end
+	if replayed then return collectedAmount, nil end
 
 	local profile = playerDataService.GetProfile(player)
 	local plot = FarmService.GetPlot(player)
