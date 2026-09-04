@@ -1,7 +1,9 @@
 --!strict
 
 local Debris = game:GetService("Debris")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
 
 local RARITY_COLORS = {
 	Common = Color3.fromRGB(168, 168, 168),
@@ -143,8 +145,8 @@ function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number,
 	collectPrompt.Name = "CollectPrompt"
 	collectPrompt.ActionText = "Collect Coins"
 	collectPrompt.ObjectText = "Farm Terminal"
-	collectPrompt.HoldDuration = 0
-	collectPrompt.MaxActivationDistance = 12
+	collectPrompt.HoldDuration = BalanceConfig.Farm.PromptHoldDuration
+	collectPrompt.MaxActivationDistance = BalanceConfig.Farm.PromptMaxActivationDistance
 	collectPrompt.RequiresLineOfSight = false
 	collectPrompt.Parent = terminal
 
@@ -177,8 +179,8 @@ function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number,
 		purchasePrompt.Name = "PurchasePrompt"
 		purchasePrompt.ActionText = "Buy Upgrade"
 		purchasePrompt.ObjectText = terminalLayout.UpgradeId
-		purchasePrompt.HoldDuration = 0
-		purchasePrompt.MaxActivationDistance = 12
+		purchasePrompt.HoldDuration = BalanceConfig.Farm.PromptHoldDuration
+		purchasePrompt.MaxActivationDistance = BalanceConfig.Farm.PromptMaxActivationDistance
 		purchasePrompt.RequiresLineOfSight = false
 		purchasePrompt.Parent = upgradeTerminal
 

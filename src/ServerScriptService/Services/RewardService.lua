@@ -10,7 +10,6 @@ assert(Shared and Shared:IsA("Folder"), "ReplicatedStorage.Shared is missing")
 
 local BalanceConfig = require(Shared:FindFirstChild("BalanceConfig") :: ModuleScript)
 local BrainrotDefinitions = require(Shared:FindFirstChild("BrainrotDefinitions") :: ModuleScript)
-local GameConfig = require(Shared:FindFirstChild("GameConfig") :: ModuleScript)
 local Types = require(Shared:FindFirstChild("Types") :: ModuleScript)
 
 type BrainrotDefinition = Types.BrainrotDefinition
@@ -23,13 +22,14 @@ type RoomSnapshot = Types.RoomSnapshot
 type RunSnapshot = Types.RunSnapshot
 type GrantedReward = { InstanceId: string, AlreadyGranted: boolean }
 
-local REWARD_CONFIG = GameConfig.Reward
 local rewardRandom = Random.new()
 local poolsByRarity: { [string]: { BrainrotDefinition } } = {}
 local runService: any = nil
 local roomService: any = nil
 local inventoryService: any = nil
 local economyService: any = nil
+local playerDataService: any = nil
+local antiExploitService: any = nil
 local decisionRemote: RemoteEvent? = nil
 local uiEventRemote: RemoteEvent? = nil
 local processedRoomRunIds: { [string]: string } = {}
@@ -37,9 +37,15 @@ local claimingDecisionIds: { [string]: boolean } = {}
 local resolvingDecisionIds: { [string]: boolean } = {}
 local decisionTimers: { [string]: thread } = {}
 local processingLossRunIds: { [string]: boolean } = {}
-local lastClientActionAt: { [Player]: number } = {}
 local initialized = false
 local started = false
+
+local DECISION_KEYS: { [string]: boolean } = {
+	Action = true,
+	RunId = true,
+	DecisionId = true,
+	Choice = true,
+}
 
 local pendingRewardCreatedEvent = Instance.new("BindableEvent")
 local claimCompletedEvent = Instance.new("BindableEvent")
@@ -119,16 +125,6 @@ local function sendVoteResult(player: Player, choice: DecisionVoteChoice?, succe
 			Run = run,
 		})
 	end
-end
-
-local function clientActionAllowed(player: Player): boolean
-	local now = os.clock()
-	local previous = lastClientActionAt[player]
-	if previous ~= nil and now - previous < REWARD_CONFIG.ClientActionCooldownSeconds then
-		return false
-	end
-	lastClientActionAt[player] = now
-	return true
 end
 
 local function cancelDecisionTimer(runId: string, decisionId: string)
@@ -211,6 +207,12 @@ local function claimDecision(runId: string, decisionId: string): (boolean, strin
 			claimingDecisionIds[claimKey] = nil
 			warn(`[RewardService] Claim grant failed for {participant.UserId}, decision {decisionId}: {grantError}`)
 			return false, `GRANT_FAILED_{participant.UserId}_{grantError}`
+		end
+		local saved, saveError = playerDataService.SavePlayer(participant)
+		if not saved then
+			claimingDecisionIds[claimKey] = nil
+			warn(`[RewardService] Claim {claimKey} could not be confirmed for {participant.UserId}: {saveError}`)
+			return false, `CLAIM_SAVE_FAILED_{participant.UserId}`
 		end
 		grantedByUserId[participant.UserId] = { InstanceId = instanceId, AlreadyGranted = alreadyGranted }
 	end
@@ -356,11 +358,15 @@ function RewardService.Init()
 	local roomModule = script.Parent:FindFirstChild("RoomService")
 	local inventoryModule = script.Parent:FindFirstChild("InventoryService")
 	local economyModule = script.Parent:FindFirstChild("EconomyService")
-	assert(runModule and roomModule and inventoryModule and economyModule, "RewardService dependencies are missing")
+	local playerDataModule = script.Parent:FindFirstChild("PlayerDataService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
+	assert(runModule and roomModule and inventoryModule and economyModule and playerDataModule and antiExploitModule, "RewardService dependencies are missing")
 	runService = require(runModule :: ModuleScript)
 	roomService = require(roomModule :: ModuleScript)
 	inventoryService = require(inventoryModule :: ModuleScript)
 	economyService = require(economyModule :: ModuleScript)
+	playerDataService = require(playerDataModule :: ModuleScript)
+	antiExploitService = require(antiExploitModule :: ModuleScript)
 
 	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 	assert(remotes and remotes:IsA("Folder"), "ReplicatedStorage.Remotes is missing")
@@ -430,13 +436,16 @@ function RewardService.Claim(player: Player, runId: string, decisionId: string):
 end
 
 local function handleDecisionRemote(player: Player, payload: any)
-	if not clientActionAllowed(player) then
+	if not antiExploitService.AllowAction(player, "DecisionVote") then
 		sendVoteResult(player, nil, false, "RATE_LIMITED", runService.GetRunForPlayer(player))
 		return
 	end
-	if type(payload) ~= "table" or payload.Action ~= "Vote"
-		or type(payload.RunId) ~= "string" or type(payload.DecisionId) ~= "string"
+	local valid = antiExploitService.ValidatePayload(payload, DECISION_KEYS)
+	if not valid or payload.Action ~= "Vote"
+		or not antiExploitService.IsBoundedString(payload.RunId)
+		or not antiExploitService.IsBoundedString(payload.DecisionId)
 		or (payload.Choice ~= "CLAIM" and payload.Choice ~= "UPGRADE") then
+		antiExploitService.RecordRejection(player, "DecisionVote", "INVALID_PAYLOAD")
 		sendVoteResult(player, nil, false, "INVALID_PAYLOAD", runService.GetRunForPlayer(player))
 		return
 	end
@@ -457,6 +466,15 @@ function RewardService.Start()
 	local remote = decisionRemote
 	assert(remote ~= nil, "DecisionVote remote is unavailable")
 	remote.OnServerEvent:Connect(handleDecisionRemote)
+	runService.ParticipantsChanged:Connect(function(run: RunSnapshot)
+		if run.State == "DECISION" and run.DecisionId ~= nil then
+			local runId = run.RunId
+			local decisionId = run.DecisionId
+			task.defer(function()
+				resolveDecision(runId, decisionId, "PARTICIPANT_LEFT", false)
+			end)
+		end
+	end)
 
 	roomService.RoomResolved:Connect(function(room: RoomSnapshot, success: boolean)
 		if success then
@@ -493,9 +511,6 @@ function RewardService.Start()
 		end
 	end)
 
-	Players.PlayerRemoving:Connect(function(player)
-		lastClientActionAt[player] = nil
-	end)
 end
 
 return table.freeze(RewardService)

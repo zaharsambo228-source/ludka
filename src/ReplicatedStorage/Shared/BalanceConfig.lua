@@ -1,8 +1,26 @@
 --!strict
 
 local BalanceConfig = {
-	ConfigVersion = 1,
+	ConfigVersion = 2,
+	Brainrots = table.freeze({
+		ProductionPerMinute = table.freeze({
+			ToasterGoblin = 12,
+			BananaRouter = 15,
+			VacuumWizard = 18,
+			MicrowaveFrog = 20,
+			PrinterGremlin = 25,
+			KeyboardCrab = 30,
+			TrafficConeKing = 42,
+			WiFiPigeon = 55,
+			SatelliteHamster = 60,
+			DiscoKettle = 85,
+			FridgeOracle = 115,
+			TurboSpoon = 220,
+		}),
+	}),
 	Farm = table.freeze({
+		InitialEfficiencyLevel = 1,
+		InitialOfflineStorageLevel = 1,
 		EfficiencyMultipliers = table.freeze({ 1.00, 1.10, 1.25, 1.45, 1.70 }),
 		OfflineStorageSeconds = table.freeze({ 30 * 60, 60 * 60, 120 * 60, 240 * 60 }),
 		SlotUnlockCosts = table.freeze({
@@ -22,6 +40,9 @@ local BalanceConfig = {
 			[3] = 3_000,
 			[4] = 10_000,
 		}),
+		TerminalRefreshSeconds = 1,
+		PromptHoldDuration = 0,
+		PromptMaxActivationDistance = 12,
 	}),
 	Run = table.freeze({
 		RarityByStage = table.freeze({ "Common", "Uncommon", "Rare", "Epic", "Mythic" }),
@@ -36,6 +57,14 @@ local BalanceConfig = {
 			Epic = 35,
 			Mythic = 50,
 		}),
+	}),
+	Room = table.freeze({
+		PromptMaxActivationDistance = 10,
+		CriticalTimerSeconds = 10,
+		ReactorPickupHoldDuration = 0.2,
+		ReactorDepositHoldDuration = 0.25,
+		SignalActivationHoldDuration = 0.1,
+		LaserExitHoldDuration = 0.15,
 	}),
 	Rooms = table.freeze({
 		ReactorRun = table.freeze({
@@ -65,6 +94,23 @@ local BalanceConfig = {
 				table.freeze({ TimeLimitSeconds = 45, LaserCount = 7, LaserDamage = 25, LaserCycleSeconds = 3.5, TravelDistance = 14, CompletionRatio = 1 }),
 			}),
 		}),
+	}),
+	UI = table.freeze({
+		ToastSeconds = 3,
+		PendingRewardRevealSeconds = 1.4,
+		ClaimRevealSeconds = 3,
+		FailureMessageSeconds = 5,
+		TutorialCompletionSeconds = 8,
+		FarmProjectionRefreshSeconds = 0.25,
+		TutorialRefreshSeconds = 0.5,
+		TransactionRetrySeconds = 30,
+	}),
+	Tutorial = table.freeze({
+		RequiredClaims = 1,
+		MinimumCollectableCoins = 1,
+	}),
+	Developer = table.freeze({
+		PrintBalanceOnStudioStart = true,
 	}),
 }
 

@@ -5,6 +5,8 @@ assert(servicesFolder and servicesFolder:IsA("Folder"), "ServerScriptService.Ser
 
 local SERVICE_NAMES = {
 	"PlayerDataService",
+	"AntiExploitService",
+	"BalanceDebugService",
 	"GameService",
 	"RunService",
 	"RoomService",
@@ -14,7 +16,6 @@ local SERVICE_NAMES = {
 	"EconomyService",
 	"UpgradeService",
 	"PolicyServiceWrapper",
-	"AntiExploitService",
 }
 
 local services = {}

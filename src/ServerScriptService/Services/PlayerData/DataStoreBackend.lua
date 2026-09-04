@@ -23,6 +23,7 @@ type SessionLock = {
 type StoredRecord = {
 	Profile: PlayerProfile,
 	SessionLock: SessionLock?,
+	LastReleasedSessionId: string?,
 }
 
 local DataStoreBackend = {}
@@ -99,6 +100,7 @@ function DataStoreBackend:Load(userId: number): (PlayerProfile?, string?)
 
 		local record: StoredRecord = {
 			Profile = profile,
+			LastReleasedSessionId = nil,
 			SessionLock = {
 				SessionId = self._sessionId,
 				PlaceId = game.PlaceId,
@@ -135,6 +137,7 @@ function DataStoreBackend:_save(userId: number, profile: PlayerProfile, releaseL
 	end
 
 	local lostLock = false
+	local alreadyReleased = false
 	local now = os.time()
 	local success, result = self:_update(self:_key(userId), function(rawRecord)
 		if type(rawRecord) ~= "table" or rawRecord.Profile == nil then
@@ -144,12 +147,17 @@ function DataStoreBackend:_save(userId: number, profile: PlayerProfile, releaseL
 
 		local existingLock = rawRecord.SessionLock
 		if type(existingLock) ~= "table" or existingLock.SessionId ~= self._sessionId then
+			if releaseLock and rawRecord.LastReleasedSessionId == self._sessionId then
+				alreadyReleased = true
+				return rawRecord
+			end
 			lostLock = true
 			return nil
 		end
 
 		local record: StoredRecord = {
 			Profile = ProfileSchema.Clone(profile),
+			LastReleasedSessionId = if releaseLock then self._sessionId else nil,
 			SessionLock = if releaseLock
 				then nil
 				else {
@@ -168,6 +176,9 @@ function DataStoreBackend:_save(userId: number, profile: PlayerProfile, releaseL
 
 	if lostLock then
 		return false, "SESSION_LOCK_LOST"
+	end
+	if alreadyReleased then
+		return true, nil
 	end
 
 	if result == nil then

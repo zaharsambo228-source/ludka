@@ -1,5 +1,8 @@
 --!strict
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+
 local ReactorBuilder = {}
 
 local function createPart(
@@ -193,7 +196,7 @@ function ReactorBuilder.Create(
 		prompt.ActionText = "Carry Energy Cell"
 		prompt.ObjectText = cellId
 		prompt.HoldDuration = definition.PickupHoldDuration
-		prompt.MaxActivationDistance = 10
+		prompt.MaxActivationDistance = BalanceConfig.Room.PromptMaxActivationDistance
 		prompt.RequiresLineOfSight = false
 		prompt.Parent = cell
 
@@ -229,7 +232,7 @@ function ReactorBuilder.Create(
 	depositPrompt.ActionText = "Activate Cell"
 	depositPrompt.ObjectText = "Reactor Stabilizer"
 	depositPrompt.HoldDuration = definition.DepositHoldDuration
-	depositPrompt.MaxActivationDistance = 10
+	depositPrompt.MaxActivationDistance = BalanceConfig.Room.PromptMaxActivationDistance
 	depositPrompt.RequiresLineOfSight = false
 	depositPrompt.Parent = reactor
 	createBillboard(reactor, "ReactorGui", `REACTOR\n0 / {requiredCells} CELLS`, Vector3.new(0, 4.5, 0), UDim2.fromOffset(300, 90))
@@ -276,7 +279,7 @@ function ReactorBuilder.UpdateTimer(build: any, remainingSeconds: number, deposi
 	local label = if billboard ~= nil then billboard:FindFirstChild("Label") else nil
 	if label ~= nil and label:IsA("TextLabel") then
 		label.Text = `REACTOR RUN\nDeliver {depositedCells} / {requiredCells} Energy Cells\n{remainingSeconds}s`
-		label.TextColor3 = if remainingSeconds <= 10
+		label.TextColor3 = if remainingSeconds <= BalanceConfig.Room.CriticalTimerSeconds
 			then Color3.fromRGB(255, 102, 102)
 			else Color3.new(1, 1, 1)
 	end

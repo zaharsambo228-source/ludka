@@ -37,6 +37,14 @@ export type DustReceipt = {
 	GrantedAt: number,
 }
 
+export type OperationReceipt = {
+	Kind: "Collect" | "Upgrade",
+	Subject: string,
+	Amount: number,
+	TargetLevel: number?,
+	CreatedAt: number,
+}
+
 export type DecisionSnapshot = {
 	DecisionId: DecisionId,
 	StartedAt: number,
@@ -194,6 +202,7 @@ export type PlayerProfile = {
 	Settings: PlayerSettings,
 	ClaimReceipts: { [string]: ClaimReceipt },
 	DustReceipts: { [string]: DustReceipt },
+	OperationReceipts: { [string]: OperationReceipt },
 }
 
 return table.freeze({})

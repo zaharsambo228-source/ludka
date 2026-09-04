@@ -68,7 +68,7 @@ local function waitForOperation(state: ProfileState, timeoutSeconds: number): bo
 		if os.clock() >= deadline then
 			return false
 		end
-		task.wait(0.05)
+		task.wait(DATA_CONFIG.OperationPollSeconds)
 	end
 	return true
 end
@@ -147,13 +147,21 @@ local function releasePlayer(player: Player)
 	state.Releasing = true
 	profileReleasingEvent:Fire(player, ProfileSchema.Clone(state.Profile))
 
-	if not waitForOperation(state, 10) then
+	if not waitForOperation(state, DATA_CONFIG.OperationWaitTimeoutSeconds) then
 		warn(`[PlayerDataService] Timed out waiting for profile operations for {player.UserId}`)
 	end
 
-	local success, saveError = saveState(player, state, true)
+	local success = false
+	local saveError: string? = nil
+	for attempt = 1, DATA_CONFIG.ReleaseRetryAttempts do
+		success, saveError = saveState(player, state, true)
+		if success or saveError == "SESSION_LOCK_LOST" then break end
+		if attempt < DATA_CONFIG.ReleaseRetryAttempts then
+			task.wait(DATA_CONFIG.ReleaseRetryDelaySeconds * attempt)
+		end
+	end
 	if not success then
-		warn(`[PlayerDataService] Failed to save/release {player.UserId}: {saveError}`)
+		warn(`[PlayerDataService] Failed to save/release {player.UserId} after retries: {saveError}`)
 	end
 
 	profiles[player] = nil
@@ -222,7 +230,7 @@ function PlayerDataService.Start()
 
 		local deadline = os.clock() + DATA_CONFIG.ShutdownSaveTimeoutSeconds
 		while pending > 0 and os.clock() < deadline do
-			task.wait(0.05)
+			task.wait(DATA_CONFIG.OperationPollSeconds)
 		end
 
 		if pending > 0 then
@@ -291,12 +299,13 @@ function PlayerDataService.SavePlayer(player: Player): (boolean, string?)
 	if state == nil then
 		return false, "PROFILE_NOT_LOADED"
 	end
-	if state.Releasing then
-		return false, "PROFILE_RELEASING"
+	if state.Saving or state.Updating then
+		if not waitForOperation(state, DATA_CONFIG.OperationWaitTimeoutSeconds) then
+			return false, "PROFILE_OPERATION_TIMEOUT"
+		end
 	end
-	if state.Updating then
-		return false, "PROFILE_UPDATE_IN_PROGRESS"
-	end
+	if state.Releasing then return false, "PROFILE_RELEASING" end
+	if not state.Dirty then return true, nil end
 
 	return saveState(player, state, false)
 end

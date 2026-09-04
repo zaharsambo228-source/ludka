@@ -11,9 +11,11 @@ local GameConfig = require(GameConfigModule)
 
 local playerDataService: any = nil
 local initialized = false
+local dustChangedEvent = Instance.new("BindableEvent")
 
 local EconomyService = {
 	Name = "EconomyService",
+	DustChanged = dustChangedEvent.Event,
 }
 
 local function pruneDustReceipts(profile: any)
@@ -78,6 +80,9 @@ function EconomyService.GrantDustOnce(player: Player, amount: number, receiptKey
 
 	if not updated and updateError == "DUST_ALREADY_GRANTED" and alreadyGranted then
 		return true, true, nil
+	end
+	if updated then
+		dustChangedEvent:Fire(player, amount, receiptKey)
 	end
 	return updated, false, updateError
 end

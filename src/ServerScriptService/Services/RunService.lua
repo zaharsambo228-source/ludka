@@ -57,12 +57,15 @@ type RunSession = {
 local RUN_CONFIG = GameConfig.Run
 local activeRun: RunSession? = nil
 local playerRunIds: { [Player]: RunId } = {}
-local lastClientActionAt: { [Player]: number } = {}
 local playerDataService: any = nil
+local antiExploitService: any = nil
 local runActionRemote: RemoteEvent? = nil
 local uiEventRemote: RemoteEvent? = nil
 local initialized = false
 local started = false
+
+local RUN_ACTION_KEYS: { [string]: boolean } = { Action = true }
+local ABANDON_ACTION_KEYS: { [string]: boolean } = { Action = true, RunId = true }
 
 local runCreatedEvent = Instance.new("BindableEvent")
 local runStateChangedEvent = Instance.new("BindableEvent")
@@ -228,24 +231,17 @@ local function clearActiveRun(session: RunSession)
 	end
 end
 
-local function clientActionAllowed(player: Player): boolean
-	local now = os.clock()
-	local previous = lastClientActionAt[player]
-	if previous ~= nil and now - previous < RUN_CONFIG.ClientActionCooldownSeconds then
-		return false
-	end
-	lastClientActionAt[player] = now
-	return true
-end
-
 local closeRun: (runId: RunId, reason: string) -> ()
 
 function RunService.Init()
 	assert(not initialized, "RunService.Init called more than once")
 
 	local playerDataModule = script.Parent:FindFirstChild("PlayerDataService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
 	assert(playerDataModule and playerDataModule:IsA("ModuleScript"), "Services.PlayerDataService is missing")
+	assert(antiExploitModule and antiExploitModule:IsA("ModuleScript"), "Services.AntiExploitService is missing")
 	playerDataService = require(playerDataModule)
+	antiExploitService = require(antiExploitModule)
 
 	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 	assert(remotes and remotes:IsA("Folder"), "ReplicatedStorage.Remotes is missing")
@@ -616,6 +612,15 @@ function RunService.StartRun(participants: { Player }): (RunSnapshot?, string?)
 		clearActiveRun(session)
 		return nil, transitionError
 	end
+	for _, player in participantMap do
+		local updated, statsError = playerDataService.UpdateProfile(player, function(profile)
+			profile.Stats.Runs += 1
+			return true, nil
+		end)
+		if not updated then
+			warn(`[RunService] Could not record run start for {player.UserId}: {statsError}`)
+		end
+	end
 	return preparationSnapshot, nil
 end
 
@@ -652,7 +657,7 @@ function RunService.FinishRun(runId: RunId, reason: string): (boolean, string?)
 	return true, nil
 end
 
-function RunService.RequestAbandon(player: Player, runId: RunId): (boolean, RunSnapshot?, string?)
+function RunService.RequestAbandon(player: Player, runId: RunId, reason: string?): (boolean, RunSnapshot?, string?)
 	assert(initialized, "RunService.Init must run before use")
 	local session = activeRun
 	if session == nil then
@@ -667,9 +672,13 @@ function RunService.RequestAbandon(player: Player, runId: RunId): (boolean, RunS
 
 	session.Participants[player.UserId] = nil
 	playerRunIds[player] = nil
+	if session.State == "DECISION" then
+		session.DecisionEligibleUserIds[player.UserId] = nil
+		session.Votes[player.UserId] = nil
+	end
 	local snapshot = makeSnapshot(session)
-	participantsChangedEvent:Fire(snapshot, player.UserId, "Abandoned")
 	sendToParticipants(session, "RunParticipantsChanged", snapshot)
+	participantsChangedEvent:Fire(snapshot, player.UserId, reason or "Abandoned")
 
 	if participantCount(session) == 0 then
 		closeRun(runId, "AllParticipantsLeft")
@@ -679,26 +688,36 @@ function RunService.RequestAbandon(player: Player, runId: RunId): (boolean, RunS
 end
 
 local function handleClientAction(player: Player, payload: any)
-	if not clientActionAllowed(player) then
+	if not antiExploitService.AllowAction(player, "RunAction") then
 		sendActionResult(player, "Unknown", false, "RATE_LIMITED", RunService.GetRunForPlayer(player))
 		return
 	end
-	if type(payload) ~= "table" or type(payload.Action) ~= "string" then
+	local validBase = antiExploitService.ValidatePayload(payload, ABANDON_ACTION_KEYS)
+	if not validBase or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.Action else nil) then
+		antiExploitService.RecordRejection(player, "RunAction", "INVALID_PAYLOAD")
 		sendActionResult(player, "Unknown", false, "INVALID_PAYLOAD", RunService.GetRunForPlayer(player))
 		return
 	end
 
 	local action = payload.Action
 	if action == "RequestStart" then
+		local valid = antiExploitService.ValidatePayload(payload, RUN_ACTION_KEYS)
+		if not valid then
+			antiExploitService.RecordRejection(player, "RunAction", "INVALID_START_PAYLOAD")
+			sendActionResult(player, action, false, "INVALID_PAYLOAD", RunService.GetRunForPlayer(player))
+			return
+		end
 		local snapshot, startError = RunService.StartRun({ player })
 		sendActionResult(player, action, snapshot ~= nil, startError, snapshot)
 	elseif action == "RequestAbandon" then
-		if type(payload.RunId) ~= "string" then
+		local valid = antiExploitService.ValidatePayload(payload, ABANDON_ACTION_KEYS)
+		if not valid or not antiExploitService.IsBoundedString(payload.RunId) then
+			antiExploitService.RecordRejection(player, "RunAction", "INVALID_RUN_ID")
 			sendActionResult(player, action, false, "INVALID_RUN_ID", RunService.GetRunForPlayer(player))
 			return
 		end
 
-		local abandoned, snapshot, abandonError = RunService.RequestAbandon(player, payload.RunId)
+		local abandoned, snapshot, abandonError = RunService.RequestAbandon(player, payload.RunId, "Abandoned")
 		sendActionResult(player, action, abandoned, abandonError, snapshot)
 	else
 		sendActionResult(player, action, false, "UNKNOWN_ACTION", RunService.GetRunForPlayer(player))
@@ -715,10 +734,9 @@ function RunService.Start()
 	remote.OnServerEvent:Connect(handleClientAction)
 
 	Players.PlayerRemoving:Connect(function(player)
-		lastClientActionAt[player] = nil
 		local runId = playerRunIds[player]
 		if runId ~= nil then
-			RunService.RequestAbandon(player, runId)
+			RunService.RequestAbandon(player, runId, "Disconnected")
 		end
 	end)
 end
