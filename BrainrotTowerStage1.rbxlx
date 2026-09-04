@@ -17,9 +17,9 @@
           <string name="Name">FarmAction</string>
         </Properties>
       </Item>
-      <Item class="RemoteEvent" referent="4">
+      <Item class="RemoteFunction" referent="4">
         <Properties>
-          <string name="Name">InventoryAction</string>
+          <string name="Name">GetPlayerSnapshot</string>
         </Properties>
       </Item>
       <Item class="RemoteEvent" referent="5">
@@ -37,19 +37,42 @@
           <string name="Name">UIEvent</string>
         </Properties>
       </Item>
+      <Item class="RemoteEvent" referent="8">
+        <Properties>
+          <string name="Name">UpgradeAction</string>
+        </Properties>
+      </Item>
     </Item>
-    <Item class="Folder" referent="8">
+    <Item class="Folder" referent="9">
       <Properties>
         <string name="Name">Shared</string>
       </Properties>
-      <Item class="ModuleScript" referent="9">
+      <Item class="ModuleScript" referent="10">
         <Properties>
           <string name="Name">BalanceConfig</string>
           <string name="Source"><![CDATA[--!strict
 
 local BalanceConfig = {
-	ConfigVersion = 1,
+	ConfigVersion = 2,
+	Brainrots = table.freeze({
+		ProductionPerMinute = table.freeze({
+			ToasterGoblin = 12,
+			BananaRouter = 15,
+			VacuumWizard = 18,
+			MicrowaveFrog = 20,
+			PrinterGremlin = 25,
+			KeyboardCrab = 30,
+			TrafficConeKing = 42,
+			WiFiPigeon = 55,
+			SatelliteHamster = 60,
+			DiscoKettle = 85,
+			FridgeOracle = 115,
+			TurboSpoon = 220,
+		}),
+	}),
 	Farm = table.freeze({
+		InitialEfficiencyLevel = 1,
+		InitialOfflineStorageLevel = 1,
 		EfficiencyMultipliers = table.freeze({ 1.00, 1.10, 1.25, 1.45, 1.70 }),
 		OfflineStorageSeconds = table.freeze({ 30 * 60, 60 * 60, 120 * 60, 240 * 60 }),
 		SlotUnlockCosts = table.freeze({
@@ -69,6 +92,9 @@ local BalanceConfig = {
 			[3] = 3_000,
 			[4] = 10_000,
 		}),
+		TerminalRefreshSeconds = 1,
+		PromptHoldDuration = 0,
+		PromptMaxActivationDistance = 12,
 	}),
 	Run = table.freeze({
 		RarityByStage = table.freeze({ "Common", "Uncommon", "Rare", "Epic", "Mythic" }),
@@ -83,6 +109,14 @@ local BalanceConfig = {
 			Epic = 35,
 			Mythic = 50,
 		}),
+	}),
+	Room = table.freeze({
+		PromptMaxActivationDistance = 10,
+		CriticalTimerSeconds = 10,
+		ReactorPickupHoldDuration = 0.2,
+		ReactorDepositHoldDuration = 0.25,
+		SignalActivationHoldDuration = 0.1,
+		LaserExitHoldDuration = 0.15,
 	}),
 	Rooms = table.freeze({
 		ReactorRun = table.freeze({
@@ -113,29 +147,50 @@ local BalanceConfig = {
 			}),
 		}),
 	}),
+	UI = table.freeze({
+		ToastSeconds = 3,
+		PendingRewardRevealSeconds = 1.4,
+		ClaimRevealSeconds = 3,
+		FailureMessageSeconds = 5,
+		TutorialCompletionSeconds = 8,
+		FarmProjectionRefreshSeconds = 0.25,
+		TutorialRefreshSeconds = 0.5,
+		TransactionRetrySeconds = 30,
+	}),
+	Tutorial = table.freeze({
+		RequiredClaims = 1,
+		MinimumCollectableCoins = 1,
+	}),
+	Developer = table.freeze({
+		PrintBalanceOnStudioStart = true,
+	}),
 }
 
 return table.freeze(BalanceConfig)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="10">
+      <Item class="ModuleScript" referent="11">
         <Properties>
           <string name="Name">BrainrotDefinitions</string>
           <string name="Source"><![CDATA[--!strict
 
 local TypesModule = script.Parent:FindFirstChild("Types")
+local BalanceConfigModule = script.Parent:FindFirstChild("BalanceConfig")
 assert(TypesModule and TypesModule:IsA("ModuleScript"), "Shared.Types is missing")
+assert(BalanceConfigModule and BalanceConfigModule:IsA("ModuleScript"), "Shared.BalanceConfig is missing")
 
 local Types = require(TypesModule)
+local BalanceConfig = require(BalanceConfigModule)
 type BrainrotDefinition = Types.BrainrotDefinition
+local Production = BalanceConfig.Brainrots.ProductionPerMinute
 
 local definitions: { [string]: BrainrotDefinition } = {
 	ToasterGoblin = {
 		Id = "ToasterGoblin",
 		DisplayName = "Toaster Goblin",
 		Rarity = "Common",
-		BaseProductionPerMinute = 12,
+		BaseProductionPerMinute = Production.ToasterGoblin,
 		ModelName = "ToasterGoblin",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -146,7 +201,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "BananaRouter",
 		DisplayName = "Banana Router",
 		Rarity = "Common",
-		BaseProductionPerMinute = 15,
+		BaseProductionPerMinute = Production.BananaRouter,
 		ModelName = "BananaRouter",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -157,7 +212,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "VacuumWizard",
 		DisplayName = "Vacuum Wizard",
 		Rarity = "Common",
-		BaseProductionPerMinute = 18,
+		BaseProductionPerMinute = Production.VacuumWizard,
 		ModelName = "VacuumWizard",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -168,7 +223,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "MicrowaveFrog",
 		DisplayName = "Microwave Frog",
 		Rarity = "Uncommon",
-		BaseProductionPerMinute = 20,
+		BaseProductionPerMinute = Production.MicrowaveFrog,
 		ModelName = "MicrowaveFrog",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -179,7 +234,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "PrinterGremlin",
 		DisplayName = "Printer Gremlin",
 		Rarity = "Uncommon",
-		BaseProductionPerMinute = 25,
+		BaseProductionPerMinute = Production.PrinterGremlin,
 		ModelName = "PrinterGremlin",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -190,7 +245,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "KeyboardCrab",
 		DisplayName = "Keyboard Crab",
 		Rarity = "Uncommon",
-		BaseProductionPerMinute = 30,
+		BaseProductionPerMinute = Production.KeyboardCrab,
 		ModelName = "KeyboardCrab",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -201,7 +256,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "TrafficConeKing",
 		DisplayName = "Traffic Cone King",
 		Rarity = "Rare",
-		BaseProductionPerMinute = 42,
+		BaseProductionPerMinute = Production.TrafficConeKing,
 		ModelName = "TrafficConeKing",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -212,7 +267,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "WiFiPigeon",
 		DisplayName = "WiFi Pigeon",
 		Rarity = "Rare",
-		BaseProductionPerMinute = 55,
+		BaseProductionPerMinute = Production.WiFiPigeon,
 		ModelName = "WiFiPigeon",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -223,7 +278,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "SatelliteHamster",
 		DisplayName = "Satellite Hamster",
 		Rarity = "Rare",
-		BaseProductionPerMinute = 60,
+		BaseProductionPerMinute = Production.SatelliteHamster,
 		ModelName = "SatelliteHamster",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -234,7 +289,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "DiscoKettle",
 		DisplayName = "Disco Kettle",
 		Rarity = "Epic",
-		BaseProductionPerMinute = 85,
+		BaseProductionPerMinute = Production.DiscoKettle,
 		ModelName = "DiscoKettle",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -245,7 +300,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "FridgeOracle",
 		DisplayName = "Fridge Oracle",
 		Rarity = "Epic",
-		BaseProductionPerMinute = 115,
+		BaseProductionPerMinute = Production.FridgeOracle,
 		ModelName = "FridgeOracle",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -256,7 +311,7 @@ local definitions: { [string]: BrainrotDefinition } = {
 		Id = "TurboSpoon",
 		DisplayName = "Turbo Spoon",
 		Rarity = "Mythic",
-		BaseProductionPerMinute = 220,
+		BaseProductionPerMinute = Production.TurboSpoon,
 		ModelName = "TurboSpoon",
 		IconAssetId = "",
 		AnimationSet = "Default",
@@ -290,7 +345,7 @@ return table.freeze(definitions)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="11">
+      <Item class="ModuleScript" referent="12">
         <Properties>
           <string name="Name">GameConfig</string>
           <string name="Source"><![CDATA[--!strict
@@ -299,7 +354,7 @@ local GameConfig = {
 	ConfigVersion = 1,
 	GameName = "Brainrot Tower",
 	PlayerData = table.freeze({
-		SchemaVersion = 4,
+		SchemaVersion = 5,
 		StoreName = "BrainrotTowerPlayerData_v1",
 		KeyPrefix = "Player_",
 		UseMockDataInStudio = true,
@@ -308,6 +363,11 @@ local GameConfig = {
 		MaxDataStoreAttempts = 3,
 		RetryDelaySeconds = 2,
 		ShutdownSaveTimeoutSeconds = 25,
+		ReleaseRetryAttempts = 2,
+		ReleaseRetryDelaySeconds = 1,
+		MaxOperationReceipts = 128,
+		OperationWaitTimeoutSeconds = 10,
+		OperationPollSeconds = 0.05,
 	}),
 	Farm = table.freeze({
 		MaxPlots = 6,
@@ -332,16 +392,37 @@ local GameConfig = {
 		MaxClaimReceipts = 64,
 		MaxDustReceipts = 64,
 	}),
+	Security = table.freeze({
+		MaxRemoteStringLength = 128,
+		MaxRemoteTableEntries = 8,
+		RejectionWarnThreshold = 25,
+		RemoteRateLimits = table.freeze({
+			RunAction = table.freeze({ Capacity = 4, RefillPerSecond = 2 }),
+			DecisionVote = table.freeze({ Capacity = 4, RefillPerSecond = 2 }),
+			RoomAction = table.freeze({ Capacity = 10, RefillPerSecond = 6 }),
+			FarmAction = table.freeze({ Capacity = 4, RefillPerSecond = 2 }),
+			UpgradeAction = table.freeze({ Capacity = 3, RefillPerSecond = 1 }),
+			GetPlayerSnapshot = table.freeze({ Capacity = 3, RefillPerSecond = 1 }),
+		}),
+	}),
+	Client = table.freeze({
+		InitialSnapshotAttempts = 10,
+		InitialSnapshotRetrySeconds = 1,
+	}),
 }
 
 return table.freeze(GameConfig)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="12">
+      <Item class="ModuleScript" referent="13">
         <Properties>
           <string name="Name">RoomDefinitions</string>
           <string name="Source"><![CDATA[--!strict
+
+local BalanceConfigModule = script.Parent:FindFirstChild("BalanceConfig")
+assert(BalanceConfigModule and BalanceConfigModule:IsA("ModuleScript"), "Shared.BalanceConfig is missing")
+local BalanceConfig = require(BalanceConfigModule)
 
 local RoomDefinitions = {
 	ReactorRun = table.freeze({
@@ -356,8 +437,8 @@ local RoomDefinitions = {
 		HazardMinZ = -5,
 		HazardMaxZ = 10,
 		HazardTravelX = 27,
-		PickupHoldDuration = 0.2,
-		DepositHoldDuration = 0.25,
+		PickupHoldDuration = BalanceConfig.Room.ReactorPickupHoldDuration,
+		DepositHoldDuration = BalanceConfig.Room.ReactorDepositHoldDuration,
 		CarryOffset = CFrame.new(1.8, 0.4, -1.8),
 	}),
 	SignalSequence = table.freeze({
@@ -369,7 +450,7 @@ local RoomDefinitions = {
 		StartZ = -15,
 		PanelZ = 10,
 		PanelSpacing = 8,
-		ActivationHoldDuration = 0.1,
+		ActivationHoldDuration = BalanceConfig.Room.SignalActivationHoldDuration,
 	}),
 	LaserGrid = table.freeze({
 		Id = "LaserGrid",
@@ -379,7 +460,7 @@ local RoomDefinitions = {
 		ArenaSize = Vector3.new(52, 1, 78),
 		StartZ = -33,
 		ExitZ = 33,
-		ExitHoldDuration = 0.15,
+		ExitHoldDuration = BalanceConfig.Room.LaserExitHoldDuration,
 	}),
 }
 
@@ -387,7 +468,7 @@ return table.freeze(RoomDefinitions)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="13">
+      <Item class="ModuleScript" referent="14">
         <Properties>
           <string name="Name">Types</string>
           <string name="Source"><![CDATA[--!strict
@@ -427,6 +508,14 @@ export type ClaimReceipt = {
 export type DustReceipt = {
 	Amount: number,
 	GrantedAt: number,
+}
+
+export type OperationReceipt = {
+	Kind: "Collect" | "Upgrade",
+	Subject: string,
+	Amount: number,
+	TargetLevel: number?,
+	CreatedAt: number,
 }
 
 export type DecisionSnapshot = {
@@ -586,35 +675,43 @@ export type PlayerProfile = {
 	Settings: PlayerSettings,
 	ClaimReceipts: { [string]: ClaimReceipt },
 	DustReceipts: { [string]: DustReceipt },
+	OperationReceipts: { [string]: OperationReceipt },
 }
 
 return table.freeze({})
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="14">
+      <Item class="ModuleScript" referent="15">
         <Properties>
           <string name="Name">UpgradeDefinitions</string>
           <string name="Source"><![CDATA[--!strict
 
 local BalanceConfigModule = script.Parent:FindFirstChild("BalanceConfig")
+local GameConfigModule = script.Parent:FindFirstChild("GameConfig")
 local TypesModule = script.Parent:FindFirstChild("Types")
 assert(BalanceConfigModule and BalanceConfigModule:IsA("ModuleScript"), "Shared.BalanceConfig is missing")
+assert(GameConfigModule and GameConfigModule:IsA("ModuleScript"), "Shared.GameConfig is missing")
 assert(TypesModule and TypesModule:IsA("ModuleScript"), "Shared.Types is missing")
 
 local BalanceConfig = require(BalanceConfigModule)
+local GameConfig = require(GameConfigModule)
 local Types = require(TypesModule)
 
 type UpgradeDefinition = Types.UpgradeDefinition
+
+local slotValues = {}
+for slotCount = 1, GameConfig.Farm.MaxSlots do slotValues[slotCount] = slotCount end
+table.freeze(slotValues)
 
 local definitions: { [string]: UpgradeDefinition } = {
 	SlotUnlock = {
 		Id = "SlotUnlock",
 		DisplayName = "Farm Slots",
 		Description = "Unlocks one additional physical Farm Slot.",
-		InitialLevel = 2,
-		MaxLevel = 6,
-		Values = table.freeze({ 1, 2, 3, 4, 5, 6 }),
+		InitialLevel = GameConfig.Farm.DefaultUnlockedSlots,
+		MaxLevel = GameConfig.Farm.MaxSlots,
+		Values = slotValues,
 		Costs = BalanceConfig.Farm.SlotUnlockCosts,
 		ValueKind = "Slots",
 	},
@@ -622,7 +719,7 @@ local definitions: { [string]: UpgradeDefinition } = {
 		Id = "FarmEfficiency",
 		DisplayName = "Farm Efficiency",
 		Description = "Multiplies production from every occupied Farm Slot.",
-		InitialLevel = 1,
+		InitialLevel = BalanceConfig.Farm.InitialEfficiencyLevel,
 		MaxLevel = #BalanceConfig.Farm.EfficiencyMultipliers,
 		Values = BalanceConfig.Farm.EfficiencyMultipliers,
 		Costs = BalanceConfig.Farm.EfficiencyUpgradeCosts,
@@ -632,7 +729,7 @@ local definitions: { [string]: UpgradeDefinition } = {
 		Id = "OfflineStorage",
 		DisplayName = "Offline Storage",
 		Description = "Extends the maximum time that offline production can accrue.",
-		InitialLevel = 1,
+		InitialLevel = BalanceConfig.Farm.InitialOfflineStorageLevel,
 		MaxLevel = #BalanceConfig.Farm.OfflineStorageSeconds,
 		Values = BalanceConfig.Farm.OfflineStorageSeconds,
 		Costs = BalanceConfig.Farm.OfflineStorageUpgradeCosts,
@@ -654,7 +751,7 @@ return table.freeze(definitions)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="15">
+      <Item class="ModuleScript" referent="16">
         <Properties>
           <string name="Name">Util</string>
           <string name="Source"><![CDATA[--!strict
@@ -666,11 +763,11 @@ return table.freeze({})
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="16">
+  <Item class="ServerScriptService" referent="17">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="17">
+    <Item class="Script" referent="18">
       <Properties>
         <string name="Name">Bootstrap</string>
         <token name="RunContext">0</token>
@@ -681,6 +778,8 @@ assert(servicesFolder and servicesFolder:IsA("Folder"), "ServerScriptService.Ser
 
 local SERVICE_NAMES = {
 	"PlayerDataService",
+	"AntiExploitService",
+	"BalanceDebugService",
 	"GameService",
 	"RunService",
 	"RoomService",
@@ -690,7 +789,6 @@ local SERVICE_NAMES = {
 	"EconomyService",
 	"UpgradeService",
 	"PolicyServiceWrapper",
-	"AntiExploitService",
 }
 
 local services = {}
@@ -723,25 +821,296 @@ print(`[BrainrotTower] Server bootstrap loaded {#SERVICE_NAMES} services`)
 ]]></string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="18">
+    <Item class="Folder" referent="19">
       <Properties>
         <string name="Name">Services</string>
       </Properties>
-      <Item class="ModuleScript" referent="19">
+      <Item class="ModuleScript" referent="20">
         <Properties>
           <string name="Name">AntiExploitService</string>
           <string name="Source"><![CDATA[--!strict
 
--- AntiExploitService gameplay behavior is introduced in its dedicated stage.
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Shared = ReplicatedStorage:FindFirstChild("Shared")
+assert(Shared and Shared:IsA("Folder"), "ReplicatedStorage.Shared is missing")
+local GameConfigModule = Shared:FindFirstChild("GameConfig")
+assert(GameConfigModule and GameConfigModule:IsA("ModuleScript"), "Shared.GameConfig is missing")
+local GameConfig = require(GameConfigModule)
+
+type Bucket = {
+	Tokens: number,
+	UpdatedAt: number,
+}
+
+local SECURITY_CONFIG = GameConfig.Security
+local bucketsByPlayer: { [Player]: { [string]: Bucket } } = {}
+local rejectionCounts: { [Player]: number } = {}
+local initialized = false
+local started = false
+
 local AntiExploitService = {
 	Name = "AntiExploitService",
 }
+
+local function recordRejection(player: Player, route: string, reason: string)
+	local count = (rejectionCounts[player] or 0) + 1
+	rejectionCounts[player] = count
+	if count == 1 or count % SECURITY_CONFIG.RejectionWarnThreshold == 0 then
+		warn(`[Security] Rejected {route} from user {player.UserId}: {reason} (count {count})`)
+	end
+end
+
+function AntiExploitService.Init()
+	assert(not initialized, "AntiExploitService.Init called more than once")
+	initialized = true
+end
+
+function AntiExploitService.Start()
+	assert(initialized, "AntiExploitService.Init must run before Start")
+	assert(not started, "AntiExploitService.Start called more than once")
+	started = true
+	Players.PlayerRemoving:Connect(function(player)
+		bucketsByPlayer[player] = nil
+		rejectionCounts[player] = nil
+	end)
+end
+
+function AntiExploitService.AllowAction(player: Player, route: string): boolean
+	assert(initialized, "AntiExploitService.Init must run before use")
+	local limit = SECURITY_CONFIG.RemoteRateLimits[route]
+	if limit == nil then
+		recordRejection(player, route, "UNKNOWN_REMOTE_ROUTE")
+		return false
+	end
+
+	local playerBuckets = bucketsByPlayer[player]
+	if playerBuckets == nil then
+		playerBuckets = {}
+		bucketsByPlayer[player] = playerBuckets
+	end
+	local now = os.clock()
+	local bucket = playerBuckets[route]
+	if bucket == nil then
+		bucket = { Tokens = limit.Capacity, UpdatedAt = now }
+		playerBuckets[route] = bucket
+	else
+		local elapsed = math.max(0, now - bucket.UpdatedAt)
+		bucket.Tokens = math.min(limit.Capacity, bucket.Tokens + elapsed * limit.RefillPerSecond)
+		bucket.UpdatedAt = now
+	end
+	if bucket.Tokens < 1 then
+		recordRejection(player, route, "RATE_LIMITED")
+		return false
+	end
+	bucket.Tokens -= 1
+	return true
+end
+
+function AntiExploitService.ValidatePayload(payload: any, allowedKeys: { [string]: boolean }): (boolean, string?)
+	if type(payload) ~= "table" then
+		return false, "INVALID_PAYLOAD_TYPE"
+	end
+	local count = 0
+	for key in payload do
+		count += 1
+		if count > SECURITY_CONFIG.MaxRemoteTableEntries then
+			return false, "PAYLOAD_TOO_LARGE"
+		end
+		if type(key) ~= "string" or not allowedKeys[key] then
+			return false, "UNEXPECTED_PAYLOAD_FIELD"
+		end
+	end
+	return true, nil
+end
+
+function AntiExploitService.IsBoundedString(value: any, allowEmpty: boolean?): boolean
+	return type(value) == "string"
+		and (allowEmpty == true or value ~= "")
+		and #value <= SECURITY_CONFIG.MaxRemoteStringLength
+end
+
+function AntiExploitService.IsFiniteInteger(value: any, minimum: number, maximum: number): boolean
+	return type(value) == "number"
+		and value == value
+		and value ~= math.huge
+		and value ~= -math.huge
+		and value % 1 == 0
+		and value >= minimum
+		and value <= maximum
+end
+
+function AntiExploitService.RecordRejection(player: Player, route: string, reason: string)
+	recordRejection(player, route, reason)
+end
 
 return table.freeze(AntiExploitService)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="20">
+      <Item class="ModuleScript" referent="21">
+        <Properties>
+          <string name="Name">BalanceDebugService</string>
+          <string name="Source"><![CDATA[--!strict
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RobloxRunService = game:GetService("RunService")
+
+local Shared = ReplicatedStorage:FindFirstChild("Shared")
+assert(Shared and Shared:IsA("Folder"), "ReplicatedStorage.Shared is missing")
+local BalanceConfig = require(Shared:FindFirstChild("BalanceConfig") :: ModuleScript)
+local BrainrotDefinitions = require(Shared:FindFirstChild("BrainrotDefinitions") :: ModuleScript)
+local UpgradeDefinitions = require(Shared:FindFirstChild("UpgradeDefinitions") :: ModuleScript)
+
+local initialized = false
+local started = false
+local BalanceDebugService = { Name = "BalanceDebugService" }
+
+local function sortedKeys(source: any): { string }
+	local keys = {}
+	for key in source do table.insert(keys, tostring(key)) end
+	table.sort(keys)
+	return keys
+end
+
+local function formatArray(values: { number }, suffix: string, divisor: number?): string
+	local formatted = {}
+	for _, value in values do
+		local displayValue = value / (divisor or 1)
+		table.insert(formatted, `{string.format("%g", displayValue)}{suffix}`)
+	end
+	return table.concat(formatted, " → ")
+end
+
+local function formatLevelCosts(costs: { [number]: number }): string
+	local levels = {}
+	for level in costs do table.insert(levels, level) end
+	table.sort(levels)
+	local formatted = {}
+	for _, level in levels do table.insert(formatted, `L{level}={costs[level]}`) end
+	return table.concat(formatted, ", ")
+end
+
+local function formatDifficulty(difficulty: any): string
+	local fields = {}
+	for _, field in sortedKeys(difficulty) do
+		table.insert(fields, `{field}={string.format("%g", difficulty[field])}`)
+	end
+	return table.concat(fields, ",")
+end
+
+local function validateBalance()
+	local production = BalanceConfig.Brainrots.ProductionPerMinute
+	local definitionCount = 0
+	for brainrotId, definition in BrainrotDefinitions do
+		local rate = production[brainrotId]
+		assert(type(rate) == "number" and rate > 0, `Missing positive production for {brainrotId}`)
+		assert(definition.BaseProductionPerMinute == rate, `Production mismatch for {brainrotId}`)
+		definitionCount += 1
+	end
+	local productionCount = 0
+	for brainrotId, rate in production do
+		assert(BrainrotDefinitions[brainrotId] ~= nil, `Production references unknown Brainrot {brainrotId}`)
+		assert(type(rate) == "number" and rate > 0, `Invalid production for {brainrotId}`)
+		productionCount += 1
+	end
+	assert(productionCount == definitionCount, "Brainrot production table is incomplete")
+
+	for upgradeId, definition in UpgradeDefinitions do
+		for targetLevel = definition.InitialLevel + 1, definition.MaxLevel do
+			local cost = definition.Costs[targetLevel]
+			assert(type(cost) == "number" and cost > 0, `Missing positive cost for {upgradeId} L{targetLevel}`)
+		end
+	end
+
+	assert(BalanceConfig.Run.PreparationSeconds > 0, "PreparationSeconds must be positive")
+	assert(BalanceConfig.Run.TravelSeconds > 0, "TravelSeconds must be positive")
+	assert(BalanceConfig.Run.DecisionSeconds > 0, "DecisionSeconds must be positive")
+	assert(BalanceConfig.Farm.InitialEfficiencyLevel >= 1 and BalanceConfig.Farm.InitialEfficiencyLevel <= #BalanceConfig.Farm.EfficiencyMultipliers, "InitialEfficiencyLevel is out of range")
+	assert(BalanceConfig.Farm.InitialOfflineStorageLevel >= 1 and BalanceConfig.Farm.InitialOfflineStorageLevel <= #BalanceConfig.Farm.OfflineStorageSeconds, "InitialOfflineStorageLevel is out of range")
+	assert(BalanceConfig.Farm.TerminalRefreshSeconds > 0, "TerminalRefreshSeconds must be positive")
+	assert(BalanceConfig.Farm.PromptMaxActivationDistance > 0, "Farm prompt distance must be positive")
+	assert(BalanceConfig.Room.PromptMaxActivationDistance > 0, "Room prompt distance must be positive")
+	assert(BalanceConfig.Room.CriticalTimerSeconds > 0, "CriticalTimerSeconds must be positive")
+	for timerName, seconds in BalanceConfig.UI do
+		assert(type(seconds) == "number" and seconds > 0, `UI timer {timerName} must be positive`)
+	end
+	local tierCount = #BalanceConfig.Run.RarityByStage
+	for _, roomId in BalanceConfig.Run.RoomPool do
+		local roomBalance = BalanceConfig.Rooms[roomId]
+		assert(roomBalance ~= nil and type(roomBalance.Tiers) == "table", `Missing balance tiers for {roomId}`)
+		assert(#roomBalance.Tiers == tierCount, `{roomId} must define {tierCount} tiers`)
+		for tier, difficulty in roomBalance.Tiers do
+			for field, value in difficulty do
+				assert(type(value) == "number" and value > 0, `{roomId} tier {tier} has invalid {field}`)
+			end
+		end
+	end
+
+	for _, rarity in BalanceConfig.Run.RarityByStage do
+		local consolation = BalanceConfig.Run.ConsolationDustByRarity[rarity]
+		assert(type(consolation) == "number" and consolation > 0, `Missing consolation Dust for {rarity}`)
+	end
+end
+
+function BalanceDebugService.GetReport(): { string }
+	local lines = {
+		`[Balance] Config v{BalanceConfig.ConfigVersion}`,
+		`[Balance] Efficiency: {formatArray(BalanceConfig.Farm.EfficiencyMultipliers, "x")}`,
+		`[Balance] Offline caps: {formatArray(BalanceConfig.Farm.OfflineStorageSeconds, "m", 60)}`,
+		`[Balance] Slot costs: {formatLevelCosts(BalanceConfig.Farm.SlotUnlockCosts)}`,
+		`[Balance] Efficiency costs: {formatLevelCosts(BalanceConfig.Farm.EfficiencyUpgradeCosts)}`,
+		`[Balance] Offline costs: {formatLevelCosts(BalanceConfig.Farm.OfflineStorageUpgradeCosts)}`,
+		`[Balance] Run timers: preparation={BalanceConfig.Run.PreparationSeconds}s, travel={BalanceConfig.Run.TravelSeconds}s, decision={BalanceConfig.Run.DecisionSeconds}s`,
+	}
+
+	local productionParts = {}
+	for _, brainrotId in sortedKeys(BalanceConfig.Brainrots.ProductionPerMinute) do
+		table.insert(productionParts, `{brainrotId}={BalanceConfig.Brainrots.ProductionPerMinute[brainrotId]}/m`)
+	end
+	table.insert(lines, `[Balance] Production: {table.concat(productionParts, ", ")}`)
+
+	local consolationParts = {}
+	for _, rarity in BalanceConfig.Run.RarityByStage do
+		table.insert(consolationParts, `{rarity}={BalanceConfig.Run.ConsolationDustByRarity[rarity]}`)
+	end
+	table.insert(lines, `[Balance] Consolation Dust: {table.concat(consolationParts, ", ")}`)
+
+	for _, roomId in BalanceConfig.Run.RoomPool do
+		local tiers = {}
+		for tier, difficulty in BalanceConfig.Rooms[roomId].Tiers do
+			table.insert(tiers, `T{tier}({formatDifficulty(difficulty)})`)
+		end
+		table.insert(lines, `[Balance] {roomId}: {table.concat(tiers, " | ")}`)
+	end
+	return lines
+end
+
+function BalanceDebugService.PrintReport()
+	for _, line in BalanceDebugService.GetReport() do print(line) end
+end
+
+function BalanceDebugService.Init()
+	assert(not initialized, "BalanceDebugService.Init called more than once")
+	validateBalance()
+	initialized = true
+end
+
+function BalanceDebugService.Start()
+	assert(initialized, "BalanceDebugService.Init must run before Start")
+	assert(not started, "BalanceDebugService.Start called more than once")
+	started = true
+	if RobloxRunService:IsStudio() and BalanceConfig.Developer.PrintBalanceOnStudioStart then
+		BalanceDebugService.PrintReport()
+	end
+end
+
+return table.freeze(BalanceDebugService)
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="22">
         <Properties>
           <string name="Name">EconomyService</string>
           <string name="Source"><![CDATA[--!strict
@@ -757,9 +1126,11 @@ local GameConfig = require(GameConfigModule)
 
 local playerDataService: any = nil
 local initialized = false
+local dustChangedEvent = Instance.new("BindableEvent")
 
 local EconomyService = {
 	Name = "EconomyService",
+	DustChanged = dustChangedEvent.Event,
 }
 
 local function pruneDustReceipts(profile: any)
@@ -825,6 +1196,9 @@ function EconomyService.GrantDustOnce(player: Player, amount: number, receiptKey
 	if not updated and updateError == "DUST_ALREADY_GRANTED" and alreadyGranted then
 		return true, true, nil
 	end
+	if updated then
+		dustChangedEvent:Fire(player, amount, receiptKey)
+	end
 	return updated, false, updateError
 end
 
@@ -832,17 +1206,19 @@ return table.freeze(EconomyService)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="21">
+      <Item class="Folder" referent="23">
         <Properties>
           <string name="Name">Farm</string>
         </Properties>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">PlotBuilder</string>
             <string name="Source"><![CDATA[--!strict
 
 local Debris = game:GetService("Debris")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
 
 local RARITY_COLORS = {
 	Common = Color3.fromRGB(168, 168, 168),
@@ -984,8 +1360,8 @@ function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number,
 	collectPrompt.Name = "CollectPrompt"
 	collectPrompt.ActionText = "Collect Coins"
 	collectPrompt.ObjectText = "Farm Terminal"
-	collectPrompt.HoldDuration = 0
-	collectPrompt.MaxActivationDistance = 12
+	collectPrompt.HoldDuration = BalanceConfig.Farm.PromptHoldDuration
+	collectPrompt.MaxActivationDistance = BalanceConfig.Farm.PromptMaxActivationDistance
 	collectPrompt.RequiresLineOfSight = false
 	collectPrompt.Parent = terminal
 
@@ -1018,8 +1394,8 @@ function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number,
 		purchasePrompt.Name = "PurchasePrompt"
 		purchasePrompt.ActionText = "Buy Upgrade"
 		purchasePrompt.ObjectText = terminalLayout.UpgradeId
-		purchasePrompt.HoldDuration = 0
-		purchasePrompt.MaxActivationDistance = 12
+		purchasePrompt.HoldDuration = BalanceConfig.Farm.PromptHoldDuration
+		purchasePrompt.MaxActivationDistance = BalanceConfig.Farm.PromptMaxActivationDistance
 		purchasePrompt.RequiresLineOfSight = false
 		purchasePrompt.Parent = upgradeTerminal
 
@@ -1244,7 +1620,7 @@ return table.freeze(PlotBuilder)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">ProductionCalculator</string>
             <string name="Source"><![CDATA[--!strict
@@ -1318,12 +1694,13 @@ return table.freeze(ProductionCalculator)
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="24">
+      <Item class="ModuleScript" referent="26">
         <Properties>
           <string name="Name">FarmService</string>
           <string name="Source"><![CDATA[--!strict
 
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RobloxRunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -1346,13 +1723,18 @@ local farmInternal = script.Parent:FindFirstChild("Farm")
 assert(farmInternal and farmInternal:IsA("Folder"), "Services.Farm is missing")
 local PlotBuilderModule = farmInternal:FindFirstChild("PlotBuilder")
 local ProductionCalculatorModule = farmInternal:FindFirstChild("ProductionCalculator")
+local playerDataInternal = script.Parent:FindFirstChild("PlayerData")
 assert(PlotBuilderModule and PlotBuilderModule:IsA("ModuleScript"), "Farm.PlotBuilder is missing")
 assert(
 	ProductionCalculatorModule and ProductionCalculatorModule:IsA("ModuleScript"),
 	"Farm.ProductionCalculator is missing"
 )
+assert(playerDataInternal and playerDataInternal:IsA("Folder"), "Services.PlayerData is missing")
+local OperationReceiptStoreModule = playerDataInternal:FindFirstChild("OperationReceiptStore")
+assert(OperationReceiptStoreModule and OperationReceiptStoreModule:IsA("ModuleScript"), "PlayerData.OperationReceiptStore is missing")
 local PlotBuilder = require(PlotBuilderModule)
 local ProductionCalculator = require(ProductionCalculatorModule)
+local OperationReceiptStore = require(OperationReceiptStoreModule)
 
 type PlayerPlotState = {
 	Index: number,
@@ -1361,6 +1743,8 @@ type PlayerPlotState = {
 
 local FARM_CONFIG = GameConfig.Farm
 local playerDataService: any = nil
+local runService: any = nil
+local antiExploitService: any = nil
 local farmPlotsFolder: Folder? = nil
 local playerPlots: { [Player]: PlayerPlotState } = {}
 local usedPlotIndexes: { [number]: boolean } = {}
@@ -1413,7 +1797,14 @@ local function connectCollectPrompt(player: Player, plot: Model)
 		if triggeringPlayer ~= player then
 			return
 		end
+		if not antiExploitService.AllowAction(triggeringPlayer, "FarmAction") then
+			return
+		end
 		if not isNearTerminal(triggeringPlayer, terminal, prompt.MaxActivationDistance + 3) then
+			antiExploitService.RecordRejection(triggeringPlayer, "FarmAction", "TOO_FAR_FROM_OWN_TERMINAL")
+			return
+		end
+		if runService.GetRunForPlayer(triggeringPlayer) ~= nil then
 			return
 		end
 
@@ -1480,8 +1871,14 @@ function FarmService.Init()
 	assert(not initialized, "FarmService.Init called more than once")
 
 	local playerDataModule = script.Parent:FindFirstChild("PlayerDataService")
+	local runServiceModule = script.Parent:FindFirstChild("RunService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
 	assert(playerDataModule and playerDataModule:IsA("ModuleScript"), "Services.PlayerDataService is missing")
+	assert(runServiceModule and runServiceModule:IsA("ModuleScript"), "Services.RunService is missing")
+	assert(antiExploitModule and antiExploitModule:IsA("ModuleScript"), "Services.AntiExploitService is missing")
 	playerDataService = require(playerDataModule)
+	runService = require(runServiceModule)
+	antiExploitService = require(antiExploitModule)
 
 	local folder = Workspace:FindFirstChild("FarmPlots")
 	assert(folder and folder:IsA("Folder"), "Workspace.FarmPlots is missing")
@@ -1516,7 +1913,7 @@ function FarmService.Start()
 
 	task.spawn(function()
 		while started do
-			task.wait(1)
+			task.wait(BalanceConfig.Farm.TerminalRefreshSeconds)
 			for player, plotState in playerPlots do
 				local profile = playerDataService.GetProfile(player)
 				if profile ~= nil then
@@ -1666,15 +2063,27 @@ function FarmService.CheckpointProfileProduction(profile: any, now: number): any
 	return ProductionCalculator.Checkpoint(profile, BrainrotDefinitions, BalanceConfig, now)
 end
 
-function FarmService.CollectCoins(player: Player): (number?, string?)
+function FarmService.CollectCoins(player: Player, requestId: string?): (number?, string?)
 	assert(initialized, "FarmService.Init must run before use")
+	local operationId = requestId or HttpService:GenerateGUID(false)
+	if type(operationId) ~= "string" or operationId == "" or #operationId > GameConfig.Security.MaxRemoteStringLength then
+		return nil, "INVALID_REQUEST_ID"
+	end
 	if collectingPlayers[player] then
 		return nil, "COLLECT_IN_PROGRESS"
 	end
 	collectingPlayers[player] = true
 
 	local collectedAmount = 0
+	local replayed = false
 	local updated, updateError = playerDataService.UpdateProfile(player, function(profile)
+		local receipt, receiptError = OperationReceiptStore.Find(profile, operationId, "Collect", "Farm")
+		if receiptError ~= nil then return false, receiptError end
+		if receipt ~= nil then
+			collectedAmount = receipt.Amount
+			replayed = true
+			return false, "OPERATION_ALREADY_APPLIED"
+		end
 		local snapshot = ProductionCalculator.Checkpoint(
 			profile,
 			BrainrotDefinitions,
@@ -1684,13 +2093,26 @@ function FarmService.CollectCoins(player: Player): (number?, string?)
 		collectedAmount = snapshot.ClaimableCoins
 		profile.Farm.AccruedCoins = math.max(0, profile.Farm.AccruedCoins - collectedAmount)
 		profile.Coins += collectedAmount
+		OperationReceiptStore.Record(profile, operationId, {
+			Kind = "Collect",
+			Subject = "Farm",
+			Amount = collectedAmount,
+			TargetLevel = nil,
+			CreatedAt = os.time(),
+		}, GameConfig.PlayerData.MaxOperationReceipts)
 		return true, nil
 	end)
 
 	collectingPlayers[player] = nil
-	if not updated then
+	if not updated and not (replayed and updateError == "OPERATION_ALREADY_APPLIED") then
 		return nil, updateError
 	end
+	local saved, saveError = playerDataService.SavePlayer(player)
+	if not saved then
+		warn(`[FarmService] Collect {operationId} could not be confirmed for {player.UserId}: {saveError}`)
+		return nil, "TRANSACTION_SAVE_FAILED"
+	end
+	if replayed then return collectedAmount, nil end
 
 	local profile = playerDataService.GetProfile(player)
 	local plot = FarmService.GetPlot(player)
@@ -1743,21 +2165,273 @@ return table.freeze(FarmService)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="25">
+      <Item class="ModuleScript" referent="27">
         <Properties>
           <string name="Name">GameService</string>
           <string name="Source"><![CDATA[--!strict
 
--- GameService gameplay behavior is introduced in its dedicated stage.
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local Shared = ReplicatedStorage:FindFirstChild("Shared")
+assert(Shared and Shared:IsA("Folder"), "ReplicatedStorage.Shared is missing")
+local BrainrotDefinitionsModule = Shared:FindFirstChild("BrainrotDefinitions")
+local GameConfigModule = Shared:FindFirstChild("GameConfig")
+assert(BrainrotDefinitionsModule and BrainrotDefinitionsModule:IsA("ModuleScript"), "Shared.BrainrotDefinitions is missing")
+assert(GameConfigModule and GameConfigModule:IsA("ModuleScript"), "Shared.GameConfig is missing")
+local BrainrotDefinitions = require(BrainrotDefinitionsModule)
+local GameConfig = require(GameConfigModule)
+
+local playerDataService: any = nil
+local farmService: any = nil
+local inventoryService: any = nil
+local economyService: any = nil
+local upgradeService: any = nil
+local runService: any = nil
+local roomService: any = nil
+local antiExploitService: any = nil
+local uiEventRemote: RemoteEvent? = nil
+local farmActionRemote: RemoteEvent? = nil
+local upgradeActionRemote: RemoteEvent? = nil
+local snapshotRemote: RemoteFunction? = nil
+local initialized = false
+local started = false
+
+local FARM_KEYS: { [string]: boolean } = { Action = true, SlotIndex = true, InstanceId = true, RequestId = true }
+local COLLECT_KEYS: { [string]: boolean } = { Action = true, RequestId = true }
+local PLACE_KEYS: { [string]: boolean } = { Action = true, SlotIndex = true, InstanceId = true }
+local REMOVE_KEYS: { [string]: boolean } = { Action = true, SlotIndex = true }
+local UPGRADE_KEYS: { [string]: boolean } = { Action = true, UpgradeId = true, RequestId = true }
+
 local GameService = {
 	Name = "GameService",
 }
+
+local function cloneSerializable<T>(value: T): T
+	if type(value) ~= "table" then
+		return value
+	end
+	local clone = {}
+	for key, child in value :: any do
+		(clone :: any)[cloneSerializable(key)] = cloneSerializable(child)
+	end
+	return clone :: T
+end
+
+local function countEntries(source: { [any]: any }): number
+	local count = 0
+	for _ in source do
+		count += 1
+	end
+	return count
+end
+
+local function buildPlayerSnapshot(player: Player): (any?, string?)
+	local profile = playerDataService.GetProfile(player)
+	if profile == nil then
+		return nil, "PROFILE_NOT_LOADED"
+	end
+	local production, productionError = farmService.GetProductionSnapshot(player)
+	if production == nil then
+		return nil, productionError
+	end
+	local upgrades, upgradesError = upgradeService.GetAllUpgradeStates(player)
+	if upgrades == nil then
+		return nil, upgradesError
+	end
+
+	local run = runService.GetRunForPlayer(player)
+	local room = roomService.GetActiveRoom()
+	if run == nil or room == nil or room.RunId ~= run.RunId then
+		room = nil
+	end
+	return {
+		ServerTime = Workspace:GetServerTimeNow(),
+		Coins = profile.Coins,
+		Dust = profile.Dust,
+		Inventory = cloneSerializable(profile.BrainrotInstances),
+		CollectionIndex = cloneSerializable(profile.CollectionIndex),
+		CollectionCount = countEntries(profile.CollectionIndex),
+		DefinitionCount = countEntries(BrainrotDefinitions),
+		Farm = cloneSerializable(profile.Farm),
+		Production = production,
+		Upgrades = upgrades,
+		Stats = cloneSerializable(profile.Stats),
+		Run = run,
+		Room = room,
+	}, nil
+end
+
+local function fireSnapshot(player: Player): any?
+	local snapshot = buildPlayerSnapshot(player)
+	local remote = uiEventRemote
+	if snapshot ~= nil and remote ~= nil and player.Parent == Players then
+		remote:FireClient(player, { Type = "PlayerSnapshot", Snapshot = snapshot })
+	end
+	return snapshot
+end
+
+local function sendActionResult(player: Player, action: string, success: boolean, errorCode: string?, data: any?)
+	local remote = uiEventRemote
+	if remote == nil or player.Parent ~= Players then
+		return
+	end
+	remote:FireClient(player, {
+		Type = "GameActionResult",
+		Action = action,
+		Success = success,
+		Error = errorCode,
+		Data = data,
+		Snapshot = if success then buildPlayerSnapshot(player) else nil,
+	})
+end
+
+local function rejectMalformed(player: Player, route: string, action: string, errorCode: string)
+	antiExploitService.RecordRejection(player, route, errorCode)
+	sendActionResult(player, action, false, errorCode, nil)
+end
+
+local function handleFarmAction(player: Player, payload: any)
+	local action = if type(payload) == "table" and type(payload.Action) == "string" and #payload.Action <= 64 then payload.Action else "Unknown"
+	if not antiExploitService.AllowAction(player, "FarmAction") then
+		sendActionResult(player, action, false, "RATE_LIMITED", nil)
+		return
+	end
+	local shapeValid, shapeError = antiExploitService.ValidatePayload(payload, FARM_KEYS)
+	if not shapeValid or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.Action else nil) then
+		rejectMalformed(player, "FarmAction", action, shapeError or "INVALID_ACTION")
+		return
+	end
+	if runService.GetRunForPlayer(player) ~= nil then
+		sendActionResult(player, action, false, "PLAYER_IN_RUN", nil)
+		return
+	end
+
+	if action == "Collect" then
+		local valid = antiExploitService.ValidatePayload(payload, COLLECT_KEYS)
+		if not valid or not antiExploitService.IsBoundedString(payload.RequestId) then
+			rejectMalformed(player, "FarmAction", action, "INVALID_COLLECT_PAYLOAD")
+			return
+		end
+		local amount, collectError = farmService.CollectCoins(player, payload.RequestId)
+		sendActionResult(player, action, amount ~= nil, collectError, { CollectedCoins = amount })
+	elseif action == "PlaceBrainrot" then
+		local valid = antiExploitService.ValidatePayload(payload, PLACE_KEYS)
+		if not valid
+			or not antiExploitService.IsFiniteInteger(payload.SlotIndex, 1, GameConfig.Farm.MaxSlots)
+			or not antiExploitService.IsBoundedString(payload.InstanceId)
+		then
+			rejectMalformed(player, "FarmAction", action, "INVALID_PLACE_PAYLOAD")
+			return
+		end
+		local placed, placeError = farmService.PlaceBrainrot(player, payload.SlotIndex, payload.InstanceId)
+		sendActionResult(player, action, placed, placeError, nil)
+	elseif action == "RemoveBrainrot" then
+		local valid = antiExploitService.ValidatePayload(payload, REMOVE_KEYS)
+		if not valid or not antiExploitService.IsFiniteInteger(payload.SlotIndex, 1, GameConfig.Farm.MaxSlots) then
+			rejectMalformed(player, "FarmAction", action, "INVALID_REMOVE_PAYLOAD")
+			return
+		end
+		local removedId, removeError = farmService.RemoveBrainrot(player, payload.SlotIndex)
+		sendActionResult(player, action, removedId ~= nil, removeError, { InstanceId = removedId })
+	else
+		sendActionResult(player, action, false, "UNKNOWN_ACTION", nil)
+	end
+end
+
+local function handleUpgradeAction(player: Player, payload: any)
+	local action = if type(payload) == "table" and type(payload.Action) == "string" and #payload.Action <= 64 then payload.Action else "Unknown"
+	if not antiExploitService.AllowAction(player, "UpgradeAction") then
+		sendActionResult(player, action, false, "RATE_LIMITED", nil)
+		return
+	end
+	local valid = antiExploitService.ValidatePayload(payload, UPGRADE_KEYS)
+	if not valid
+		or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.Action else nil)
+		or action ~= "PurchaseUpgrade"
+		or not antiExploitService.IsBoundedString(payload.UpgradeId)
+		or not antiExploitService.IsBoundedString(payload.RequestId)
+	then
+		rejectMalformed(player, "UpgradeAction", action, "INVALID_UPGRADE_PAYLOAD")
+		return
+	end
+	if runService.GetRunForPlayer(player) ~= nil then
+		sendActionResult(player, action, false, "PLAYER_IN_RUN", nil)
+		return
+	end
+	local purchased, state, purchaseError = upgradeService.PurchaseUpgrade(player, payload.UpgradeId, payload.RequestId)
+	sendActionResult(player, action, purchased, purchaseError, state)
+end
+
+function GameService.Init()
+	assert(not initialized, "GameService.Init called more than once")
+	local services = script.Parent
+	local function requireService(name: string): any
+		local module = services:FindFirstChild(name)
+		assert(module and module:IsA("ModuleScript"), `Services.{name} is missing`)
+		return require(module)
+	end
+	playerDataService = requireService("PlayerDataService")
+	farmService = requireService("FarmService")
+	inventoryService = requireService("InventoryService")
+	economyService = requireService("EconomyService")
+	upgradeService = requireService("UpgradeService")
+	runService = requireService("RunService")
+	roomService = requireService("RoomService")
+	antiExploitService = requireService("AntiExploitService")
+
+	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+	assert(remotes and remotes:IsA("Folder"), "ReplicatedStorage.Remotes is missing")
+	local uiEvent = remotes:FindFirstChild("UIEvent")
+	local farmAction = remotes:FindFirstChild("FarmAction")
+	local upgradeAction = remotes:FindFirstChild("UpgradeAction")
+	local getPlayerSnapshot = remotes:FindFirstChild("GetPlayerSnapshot")
+	assert(uiEvent and uiEvent:IsA("RemoteEvent"), "Remotes.UIEvent is missing")
+	assert(farmAction and farmAction:IsA("RemoteEvent"), "Remotes.FarmAction is missing")
+	assert(upgradeAction and upgradeAction:IsA("RemoteEvent"), "Remotes.UpgradeAction is missing")
+	assert(getPlayerSnapshot and getPlayerSnapshot:IsA("RemoteFunction"), "Remotes.GetPlayerSnapshot is missing")
+	uiEventRemote = uiEvent
+	farmActionRemote = farmAction
+	upgradeActionRemote = upgradeAction
+	snapshotRemote = getPlayerSnapshot
+	initialized = true
+end
+
+function GameService.Start()
+	assert(initialized, "GameService.Init must run before Start")
+	assert(not started, "GameService.Start called more than once")
+	started = true
+	local farmRemote = farmActionRemote
+	local upgradeRemote = upgradeActionRemote
+	local getSnapshot = snapshotRemote
+	assert(farmRemote and upgradeRemote and getSnapshot, "GameService remotes are unavailable")
+	farmRemote.OnServerEvent:Connect(handleFarmAction)
+	upgradeRemote.OnServerEvent:Connect(handleUpgradeAction)
+	getSnapshot.OnServerInvoke = function(player)
+		if not antiExploitService.AllowAction(player, "GetPlayerSnapshot") then
+			return { Success = false, Snapshot = nil, Error = "RATE_LIMITED" }
+		end
+		local snapshot, snapshotError = buildPlayerSnapshot(player)
+		return { Success = snapshot ~= nil, Snapshot = snapshot, Error = snapshotError }
+	end
+
+	local function refresh(player: Player)
+		task.defer(fireSnapshot, player)
+	end
+	playerDataService.ProfileLoaded:Connect(refresh)
+	inventoryService.InventoryChanged:Connect(refresh)
+	farmService.FarmChanged:Connect(refresh)
+	farmService.CoinsCollected:Connect(refresh)
+	economyService.DustChanged:Connect(refresh)
+	upgradeService.UpgradePurchased:Connect(refresh)
+end
 
 return table.freeze(GameService)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="26">
+      <Item class="ModuleScript" referent="28">
         <Properties>
           <string name="Name">InventoryService</string>
           <string name="Source"><![CDATA[--!strict
@@ -2041,11 +2715,11 @@ return table.freeze(InventoryService)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="27">
+      <Item class="Folder" referent="29">
         <Properties>
           <string name="Name">PlayerData</string>
         </Properties>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">DataStoreBackend</string>
             <string name="Source"><![CDATA[--!strict
@@ -2073,6 +2747,7 @@ type SessionLock = {
 type StoredRecord = {
 	Profile: PlayerProfile,
 	SessionLock: SessionLock?,
+	LastReleasedSessionId: string?,
 }
 
 local DataStoreBackend = {}
@@ -2149,6 +2824,7 @@ function DataStoreBackend:Load(userId: number): (PlayerProfile?, string?)
 
 		local record: StoredRecord = {
 			Profile = profile,
+			LastReleasedSessionId = nil,
 			SessionLock = {
 				SessionId = self._sessionId,
 				PlaceId = game.PlaceId,
@@ -2185,6 +2861,7 @@ function DataStoreBackend:_save(userId: number, profile: PlayerProfile, releaseL
 	end
 
 	local lostLock = false
+	local alreadyReleased = false
 	local now = os.time()
 	local success, result = self:_update(self:_key(userId), function(rawRecord)
 		if type(rawRecord) ~= "table" or rawRecord.Profile == nil then
@@ -2194,12 +2871,17 @@ function DataStoreBackend:_save(userId: number, profile: PlayerProfile, releaseL
 
 		local existingLock = rawRecord.SessionLock
 		if type(existingLock) ~= "table" or existingLock.SessionId ~= self._sessionId then
+			if releaseLock and rawRecord.LastReleasedSessionId == self._sessionId then
+				alreadyReleased = true
+				return rawRecord
+			end
 			lostLock = true
 			return nil
 		end
 
 		local record: StoredRecord = {
 			Profile = ProfileSchema.Clone(profile),
+			LastReleasedSessionId = if releaseLock then self._sessionId else nil,
 			SessionLock = if releaseLock
 				then nil
 				else {
@@ -2218,6 +2900,9 @@ function DataStoreBackend:_save(userId: number, profile: PlayerProfile, releaseL
 
 	if lostLock then
 		return false, "SESSION_LOCK_LOST"
+	end
+	if alreadyReleased then
+		return true, nil
 	end
 
 	if result == nil then
@@ -2239,7 +2924,7 @@ return table.freeze(DataStoreBackend)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">MemoryBackend</string>
             <string name="Source"><![CDATA[--!strict
@@ -2252,6 +2937,7 @@ type PlayerProfile = any
 -- so leave/rejoin tests can verify persistence without DataStore API access.
 local MOCK_RECORDS: { [number]: PlayerProfile } = {}
 local MOCK_LOCKS: { [number]: string } = {}
+local MOCK_RELEASED_BY: { [number]: string } = {}
 
 local MemoryBackend = {}
 MemoryBackend.__index = MemoryBackend
@@ -2274,6 +2960,7 @@ function MemoryBackend:Load(userId: number): (PlayerProfile?, string?)
 	end
 
 	MOCK_LOCKS[userId] = self._sessionId
+	MOCK_RELEASED_BY[userId] = nil
 	MOCK_RECORDS[userId] = ProfileSchema.Clone(profile)
 	return ProfileSchema.Clone(profile), nil
 end
@@ -2293,12 +2980,16 @@ function MemoryBackend:Save(userId: number, profile: PlayerProfile): (boolean, s
 end
 
 function MemoryBackend:Release(userId: number, profile: PlayerProfile): (boolean, string?)
+	if MOCK_LOCKS[userId] == nil and MOCK_RELEASED_BY[userId] == self._sessionId then
+		return true, nil
+	end
 	local success, saveError = self:Save(userId, profile)
 	if not success then
 		return false, saveError
 	end
 
 	MOCK_LOCKS[userId] = nil
+	MOCK_RELEASED_BY[userId] = self._sessionId
 	return true, nil
 end
 
@@ -2306,7 +2997,48 @@ return table.freeze(MemoryBackend)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="32">
+          <Properties>
+            <string name="Name">OperationReceiptStore</string>
+            <string name="Source"><![CDATA[--!strict
+
+local OperationReceiptStore = {}
+
+local function prune(receipts: any, maximumReceipts: number)
+	local ordered = {}
+	for requestId, receipt in receipts do
+		table.insert(ordered, { RequestId = requestId, CreatedAt = receipt.CreatedAt })
+	end
+	if #ordered <= maximumReceipts then return end
+	table.sort(ordered, function(left, right)
+		if left.CreatedAt == right.CreatedAt then return left.RequestId < right.RequestId end
+		return left.CreatedAt < right.CreatedAt
+	end)
+	for index = 1, #ordered - maximumReceipts do
+		receipts[ordered[index].RequestId] = nil
+	end
+end
+
+function OperationReceiptStore.Find(profile: any, requestId: string, kind: string, subject: string): (any?, string?)
+	local receipt = profile.OperationReceipts[requestId]
+	if receipt == nil then return nil, nil end
+	if receipt.Kind ~= kind or receipt.Subject ~= subject then
+		return nil, "OPERATION_RECEIPT_CONFLICT"
+	end
+	return receipt, nil
+end
+
+function OperationReceiptStore.Record(profile: any, requestId: string, receipt: any, maximumReceipts: number)
+	assert(profile.OperationReceipts[requestId] == nil, "Operation receipt already exists")
+	profile.OperationReceipts[requestId] = receipt
+	prune(profile.OperationReceipts, maximumReceipts)
+end
+
+return table.freeze(OperationReceiptStore)
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">ProfileSchema</string>
             <string name="Source"><![CDATA[--!strict
@@ -2338,14 +3070,14 @@ local DEFAULT_PROFILE: PlayerProfile = {
 	BrainrotInstances = {},
 	CollectionIndex = {},
 	Farm = {
-		UnlockedSlots = 2,
+		UnlockedSlots = GameConfig.Farm.DefaultUnlockedSlots,
 		Slots = {},
 		LastCollectTimestamp = 0,
 		AccruedCoins = 0,
 	},
 	Upgrades = {
-		FarmEfficiency = 1,
-		OfflineStorage = 1,
+		FarmEfficiency = BalanceConfig.Farm.InitialEfficiencyLevel,
+		OfflineStorage = BalanceConfig.Farm.InitialOfflineStorageLevel,
 	},
 	Stats = {
 		Runs = 0,
@@ -2355,6 +3087,7 @@ local DEFAULT_PROFILE: PlayerProfile = {
 	Settings = {},
 	ClaimReceipts = {},
 	DustReceipts = {},
+	OperationReceipts = {},
 }
 
 local function deepCopy<T>(value: T): T
@@ -2414,6 +3147,10 @@ local MIGRATIONS: { [number]: (profile: { [any]: any }) -> () } = {
 	[3] = function(profile)
 		profile.DustReceipts = profile.DustReceipts or {}
 		profile.SchemaVersion = 4
+	end,
+	[4] = function(profile)
+		profile.OperationReceipts = profile.OperationReceipts or {}
+		profile.SchemaVersion = 5
 	end,
 }
 
@@ -2495,6 +3232,7 @@ function ProfileSchema.Validate(profile: PlayerProfile): (boolean, string?)
 		or type(profile.Settings) ~= "table"
 		or type(profile.ClaimReceipts) ~= "table"
 		or type(profile.DustReceipts) ~= "table"
+		or type(profile.OperationReceipts) ~= "table"
 	then
 		return false, "Profile contains an invalid root collection"
 	end
@@ -2509,6 +3247,34 @@ function ProfileSchema.Validate(profile: PlayerProfile): (boolean, string?)
 		then
 			return false, `Profile contains an invalid Dust receipt: {tostring(receiptKey)}`
 		end
+	end
+
+	local operationReceiptCount = 0
+	for requestId, receipt in profile.OperationReceipts do
+		operationReceiptCount += 1
+		if type(requestId) ~= "string"
+			or requestId == ""
+			or #requestId > GameConfig.Security.MaxRemoteStringLength
+			or type(receipt) ~= "table"
+			or (receipt.Kind ~= "Collect" and receipt.Kind ~= "Upgrade")
+			or type(receipt.Subject) ~= "string"
+			or receipt.Subject == ""
+			or #receipt.Subject > GameConfig.Security.MaxRemoteStringLength
+			or not isNonNegativeInteger(receipt.Amount)
+			or not isNonNegativeInteger(receipt.CreatedAt)
+			or (receipt.TargetLevel ~= nil and not isNonNegativeInteger(receipt.TargetLevel))
+		then
+			return false, `Profile contains an invalid operation receipt: {tostring(requestId)}`
+		end
+		if receipt.Kind == "Collect" and (receipt.Subject ~= "Farm" or receipt.TargetLevel ~= nil) then
+			return false, `Profile contains an invalid Collect receipt: {requestId}`
+		end
+		if receipt.Kind == "Upgrade" and receipt.TargetLevel == nil then
+			return false, `Profile contains an invalid Upgrade receipt: {requestId}`
+		end
+	end
+	if operationReceiptCount > GameConfig.PlayerData.MaxOperationReceipts then
+		return false, "Profile contains too many operation receipts"
 	end
 
 	for instanceId, instance in profile.BrainrotInstances do
@@ -2606,9 +3372,9 @@ function ProfileSchema.Validate(profile: PlayerProfile): (boolean, string?)
 	then
 		return false, "Profile contains invalid Upgrade data"
 	end
-	if profile.Upgrades.FarmEfficiency < 1
+	if profile.Upgrades.FarmEfficiency < BalanceConfig.Farm.InitialEfficiencyLevel
 		or profile.Upgrades.FarmEfficiency > #BalanceConfig.Farm.EfficiencyMultipliers
-		or profile.Upgrades.OfflineStorage < 1
+		or profile.Upgrades.OfflineStorage < BalanceConfig.Farm.InitialOfflineStorageLevel
 		or profile.Upgrades.OfflineStorage > #BalanceConfig.Farm.OfflineStorageSeconds
 	then
 		return false, "Profile contains an out-of-range Upgrade level"
@@ -2633,7 +3399,7 @@ return table.freeze(ProfileSchema)
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="31">
+      <Item class="ModuleScript" referent="34">
         <Properties>
           <string name="Name">PlayerDataService</string>
           <string name="Source"><![CDATA[--!strict
@@ -2706,7 +3472,7 @@ local function waitForOperation(state: ProfileState, timeoutSeconds: number): bo
 		if os.clock() >= deadline then
 			return false
 		end
-		task.wait(0.05)
+		task.wait(DATA_CONFIG.OperationPollSeconds)
 	end
 	return true
 end
@@ -2785,13 +3551,21 @@ local function releasePlayer(player: Player)
 	state.Releasing = true
 	profileReleasingEvent:Fire(player, ProfileSchema.Clone(state.Profile))
 
-	if not waitForOperation(state, 10) then
+	if not waitForOperation(state, DATA_CONFIG.OperationWaitTimeoutSeconds) then
 		warn(`[PlayerDataService] Timed out waiting for profile operations for {player.UserId}`)
 	end
 
-	local success, saveError = saveState(player, state, true)
+	local success = false
+	local saveError: string? = nil
+	for attempt = 1, DATA_CONFIG.ReleaseRetryAttempts do
+		success, saveError = saveState(player, state, true)
+		if success or saveError == "SESSION_LOCK_LOST" then break end
+		if attempt < DATA_CONFIG.ReleaseRetryAttempts then
+			task.wait(DATA_CONFIG.ReleaseRetryDelaySeconds * attempt)
+		end
+	end
 	if not success then
-		warn(`[PlayerDataService] Failed to save/release {player.UserId}: {saveError}`)
+		warn(`[PlayerDataService] Failed to save/release {player.UserId} after retries: {saveError}`)
 	end
 
 	profiles[player] = nil
@@ -2860,7 +3634,7 @@ function PlayerDataService.Start()
 
 		local deadline = os.clock() + DATA_CONFIG.ShutdownSaveTimeoutSeconds
 		while pending > 0 and os.clock() < deadline do
-			task.wait(0.05)
+			task.wait(DATA_CONFIG.OperationPollSeconds)
 		end
 
 		if pending > 0 then
@@ -2929,12 +3703,13 @@ function PlayerDataService.SavePlayer(player: Player): (boolean, string?)
 	if state == nil then
 		return false, "PROFILE_NOT_LOADED"
 	end
-	if state.Releasing then
-		return false, "PROFILE_RELEASING"
+	if state.Saving or state.Updating then
+		if not waitForOperation(state, DATA_CONFIG.OperationWaitTimeoutSeconds) then
+			return false, "PROFILE_OPERATION_TIMEOUT"
+		end
 	end
-	if state.Updating then
-		return false, "PROFILE_UPDATE_IN_PROGRESS"
-	end
+	if state.Releasing then return false, "PROFILE_RELEASING" end
+	if not state.Dirty then return true, nil end
 
 	return saveState(player, state, false)
 end
@@ -2947,7 +3722,7 @@ return table.freeze(PlayerDataService)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="32">
+      <Item class="ModuleScript" referent="35">
         <Properties>
           <string name="Name">PolicyServiceWrapper</string>
           <string name="Source"><![CDATA[--!strict
@@ -2961,7 +3736,7 @@ return table.freeze(PolicyServiceWrapper)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="33">
+      <Item class="ModuleScript" referent="36">
         <Properties>
           <string name="Name">RewardService</string>
           <string name="Source"><![CDATA[--!strict
@@ -2976,7 +3751,6 @@ assert(Shared and Shared:IsA("Folder"), "ReplicatedStorage.Shared is missing")
 
 local BalanceConfig = require(Shared:FindFirstChild("BalanceConfig") :: ModuleScript)
 local BrainrotDefinitions = require(Shared:FindFirstChild("BrainrotDefinitions") :: ModuleScript)
-local GameConfig = require(Shared:FindFirstChild("GameConfig") :: ModuleScript)
 local Types = require(Shared:FindFirstChild("Types") :: ModuleScript)
 
 type BrainrotDefinition = Types.BrainrotDefinition
@@ -2989,13 +3763,14 @@ type RoomSnapshot = Types.RoomSnapshot
 type RunSnapshot = Types.RunSnapshot
 type GrantedReward = { InstanceId: string, AlreadyGranted: boolean }
 
-local REWARD_CONFIG = GameConfig.Reward
 local rewardRandom = Random.new()
 local poolsByRarity: { [string]: { BrainrotDefinition } } = {}
 local runService: any = nil
 local roomService: any = nil
 local inventoryService: any = nil
 local economyService: any = nil
+local playerDataService: any = nil
+local antiExploitService: any = nil
 local decisionRemote: RemoteEvent? = nil
 local uiEventRemote: RemoteEvent? = nil
 local processedRoomRunIds: { [string]: string } = {}
@@ -3003,9 +3778,15 @@ local claimingDecisionIds: { [string]: boolean } = {}
 local resolvingDecisionIds: { [string]: boolean } = {}
 local decisionTimers: { [string]: thread } = {}
 local processingLossRunIds: { [string]: boolean } = {}
-local lastClientActionAt: { [Player]: number } = {}
 local initialized = false
 local started = false
+
+local DECISION_KEYS: { [string]: boolean } = {
+	Action = true,
+	RunId = true,
+	DecisionId = true,
+	Choice = true,
+}
 
 local pendingRewardCreatedEvent = Instance.new("BindableEvent")
 local claimCompletedEvent = Instance.new("BindableEvent")
@@ -3085,16 +3866,6 @@ local function sendVoteResult(player: Player, choice: DecisionVoteChoice?, succe
 			Run = run,
 		})
 	end
-end
-
-local function clientActionAllowed(player: Player): boolean
-	local now = os.clock()
-	local previous = lastClientActionAt[player]
-	if previous ~= nil and now - previous < REWARD_CONFIG.ClientActionCooldownSeconds then
-		return false
-	end
-	lastClientActionAt[player] = now
-	return true
 end
 
 local function cancelDecisionTimer(runId: string, decisionId: string)
@@ -3177,6 +3948,12 @@ local function claimDecision(runId: string, decisionId: string): (boolean, strin
 			claimingDecisionIds[claimKey] = nil
 			warn(`[RewardService] Claim grant failed for {participant.UserId}, decision {decisionId}: {grantError}`)
 			return false, `GRANT_FAILED_{participant.UserId}_{grantError}`
+		end
+		local saved, saveError = playerDataService.SavePlayer(participant)
+		if not saved then
+			claimingDecisionIds[claimKey] = nil
+			warn(`[RewardService] Claim {claimKey} could not be confirmed for {participant.UserId}: {saveError}`)
+			return false, `CLAIM_SAVE_FAILED_{participant.UserId}`
 		end
 		grantedByUserId[participant.UserId] = { InstanceId = instanceId, AlreadyGranted = alreadyGranted }
 	end
@@ -3322,11 +4099,15 @@ function RewardService.Init()
 	local roomModule = script.Parent:FindFirstChild("RoomService")
 	local inventoryModule = script.Parent:FindFirstChild("InventoryService")
 	local economyModule = script.Parent:FindFirstChild("EconomyService")
-	assert(runModule and roomModule and inventoryModule and economyModule, "RewardService dependencies are missing")
+	local playerDataModule = script.Parent:FindFirstChild("PlayerDataService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
+	assert(runModule and roomModule and inventoryModule and economyModule and playerDataModule and antiExploitModule, "RewardService dependencies are missing")
 	runService = require(runModule :: ModuleScript)
 	roomService = require(roomModule :: ModuleScript)
 	inventoryService = require(inventoryModule :: ModuleScript)
 	economyService = require(economyModule :: ModuleScript)
+	playerDataService = require(playerDataModule :: ModuleScript)
+	antiExploitService = require(antiExploitModule :: ModuleScript)
 
 	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 	assert(remotes and remotes:IsA("Folder"), "ReplicatedStorage.Remotes is missing")
@@ -3396,13 +4177,16 @@ function RewardService.Claim(player: Player, runId: string, decisionId: string):
 end
 
 local function handleDecisionRemote(player: Player, payload: any)
-	if not clientActionAllowed(player) then
+	if not antiExploitService.AllowAction(player, "DecisionVote") then
 		sendVoteResult(player, nil, false, "RATE_LIMITED", runService.GetRunForPlayer(player))
 		return
 	end
-	if type(payload) ~= "table" or payload.Action ~= "Vote"
-		or type(payload.RunId) ~= "string" or type(payload.DecisionId) ~= "string"
+	local valid = antiExploitService.ValidatePayload(payload, DECISION_KEYS)
+	if not valid or payload.Action ~= "Vote"
+		or not antiExploitService.IsBoundedString(payload.RunId)
+		or not antiExploitService.IsBoundedString(payload.DecisionId)
 		or (payload.Choice ~= "CLAIM" and payload.Choice ~= "UPGRADE") then
+		antiExploitService.RecordRejection(player, "DecisionVote", "INVALID_PAYLOAD")
 		sendVoteResult(player, nil, false, "INVALID_PAYLOAD", runService.GetRunForPlayer(player))
 		return
 	end
@@ -3423,6 +4207,15 @@ function RewardService.Start()
 	local remote = decisionRemote
 	assert(remote ~= nil, "DecisionVote remote is unavailable")
 	remote.OnServerEvent:Connect(handleDecisionRemote)
+	runService.ParticipantsChanged:Connect(function(run: RunSnapshot)
+		if run.State == "DECISION" and run.DecisionId ~= nil then
+			local runId = run.RunId
+			local decisionId = run.DecisionId
+			task.defer(function()
+				resolveDecision(runId, decisionId, "PARTICIPANT_LEFT", false)
+			end)
+		end
+	end)
 
 	roomService.RoomResolved:Connect(function(room: RoomSnapshot, success: boolean)
 		if success then
@@ -3459,20 +4252,17 @@ function RewardService.Start()
 		end
 	end)
 
-	Players.PlayerRemoving:Connect(function(player)
-		lastClientActionAt[player] = nil
-	end)
 end
 
 return table.freeze(RewardService)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="34">
+      <Item class="Folder" referent="37">
         <Properties>
           <string name="Name">Room</string>
         </Properties>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">BuilderUtil</string>
             <string name="Source"><![CDATA[--!strict
@@ -3545,10 +4335,13 @@ return table.freeze(BuilderUtil)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">LaserGridBuilder</string>
             <string name="Source"><![CDATA[--!strict
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
 
 local BuilderUtilModule = script.Parent:FindFirstChild("BuilderUtil")
 assert(BuilderUtilModule and BuilderUtilModule:IsA("ModuleScript"), "Room.BuilderUtil is missing")
@@ -3561,7 +4354,7 @@ local function updateLabel(build: any, finishers: number, required: number, rema
 	local label = if gui ~= nil then gui:FindFirstChild("Label") else nil
 	if label ~= nil and label:IsA("TextLabel") then
 		label.Text = `LASER GRID\nPlayers escaped {finishers} / {required}\n{remaining}s`
-		label.TextColor3 = if remaining <= 10 then Color3.fromRGB(255, 102, 102) else Color3.new(1, 1, 1)
+		label.TextColor3 = if remaining <= BalanceConfig.Room.CriticalTimerSeconds then Color3.fromRGB(255, 102, 102) else Color3.new(1, 1, 1)
 	end
 end
 
@@ -3621,7 +4414,7 @@ function LaserGridBuilder.Create(
 	exitPrompt.ActionText = "Escape"
 	exitPrompt.ObjectText = "Safe Zone"
 	exitPrompt.HoldDuration = definition.ExitHoldDuration
-	exitPrompt.MaxActivationDistance = 10
+	exitPrompt.MaxActivationDistance = BalanceConfig.Room.PromptMaxActivationDistance
 	exitPrompt.RequiresLineOfSight = false
 	exitPrompt.Parent = exit
 	BuilderUtil.CreateBillboard(exit, "ExitGui", "SAFE EXIT", Vector3.new(0, 3, 0), UDim2.fromOffset(240, 70))
@@ -3638,10 +4431,13 @@ return table.freeze(LaserGridBuilder)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">ReactorBuilder</string>
             <string name="Source"><![CDATA[--!strict
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
 
 local ReactorBuilder = {}
 
@@ -3836,7 +4632,7 @@ function ReactorBuilder.Create(
 		prompt.ActionText = "Carry Energy Cell"
 		prompt.ObjectText = cellId
 		prompt.HoldDuration = definition.PickupHoldDuration
-		prompt.MaxActivationDistance = 10
+		prompt.MaxActivationDistance = BalanceConfig.Room.PromptMaxActivationDistance
 		prompt.RequiresLineOfSight = false
 		prompt.Parent = cell
 
@@ -3872,7 +4668,7 @@ function ReactorBuilder.Create(
 	depositPrompt.ActionText = "Activate Cell"
 	depositPrompt.ObjectText = "Reactor Stabilizer"
 	depositPrompt.HoldDuration = definition.DepositHoldDuration
-	depositPrompt.MaxActivationDistance = 10
+	depositPrompt.MaxActivationDistance = BalanceConfig.Room.PromptMaxActivationDistance
 	depositPrompt.RequiresLineOfSight = false
 	depositPrompt.Parent = reactor
 	createBillboard(reactor, "ReactorGui", `REACTOR\n0 / {requiredCells} CELLS`, Vector3.new(0, 4.5, 0), UDim2.fromOffset(300, 90))
@@ -3919,7 +4715,7 @@ function ReactorBuilder.UpdateTimer(build: any, remainingSeconds: number, deposi
 	local label = if billboard ~= nil then billboard:FindFirstChild("Label") else nil
 	if label ~= nil and label:IsA("TextLabel") then
 		label.Text = `REACTOR RUN\nDeliver {depositedCells} / {requiredCells} Energy Cells\n{remainingSeconds}s`
-		label.TextColor3 = if remainingSeconds <= 10
+		label.TextColor3 = if remainingSeconds <= BalanceConfig.Room.CriticalTimerSeconds
 			then Color3.fromRGB(255, 102, 102)
 			else Color3.new(1, 1, 1)
 	end
@@ -3944,10 +4740,13 @@ return table.freeze(ReactorBuilder)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">SignalSequenceBuilder</string>
             <string name="Source"><![CDATA[--!strict
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
 
 local BuilderUtilModule = script.Parent:FindFirstChild("BuilderUtil")
 assert(BuilderUtilModule and BuilderUtilModule:IsA("ModuleScript"), "Room.BuilderUtil is missing")
@@ -4017,7 +4816,7 @@ function SignalSequenceBuilder.Create(
 		prompt.ActionText = "Activate"
 		prompt.ObjectText = tostring(index)
 		prompt.HoldDuration = definition.ActivationHoldDuration
-		prompt.MaxActivationDistance = 10
+		prompt.MaxActivationDistance = BalanceConfig.Room.PromptMaxActivationDistance
 		prompt.RequiresLineOfSight = false
 		prompt.Enabled = false
 		prompt.Parent = panel
@@ -4046,7 +4845,7 @@ function SignalSequenceBuilder.BeginInput(build: any)
 end
 
 function SignalSequenceBuilder.Update(build: any, position: number, required: number, mistakes: number, remaining: number)
-	setLabel(build.ObjectiveSign, "ObjectiveGui", `SIGNAL SEQUENCE\nProgress {position} / {required}  •  Mistakes {mistakes}\n{remaining}s`, if remaining <= 10 then Color3.fromRGB(255, 102, 102) else nil)
+	setLabel(build.ObjectiveSign, "ObjectiveGui", `SIGNAL SEQUENCE\nProgress {position} / {required}  •  Mistakes {mistakes}\n{remaining}s`, if remaining <= BalanceConfig.Room.CriticalTimerSeconds then Color3.fromRGB(255, 102, 102) else nil)
 end
 
 return table.freeze(SignalSequenceBuilder)
@@ -4054,7 +4853,7 @@ return table.freeze(SignalSequenceBuilder)
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="39">
+      <Item class="ModuleScript" referent="42">
         <Properties>
           <string name="Name">RoomService</string>
           <string name="Source"><![CDATA[--!strict
@@ -4145,6 +4944,7 @@ type RoomSession = {
 
 local ROOM_CONFIG = GameConfig.Room
 local runService: any = nil
+local antiExploitService: any = nil
 local roomActionRemote: RemoteEvent? = nil
 local uiEventRemote: RemoteEvent? = nil
 local activeRoomsFolder: Folder? = nil
@@ -4153,6 +4953,17 @@ local roomRandom = Random.new()
 local lastRoomTypeByRunId: { [string]: string } = {}
 local initialized = false
 local started = false
+
+local ROOM_ACTION_KEYS: { [string]: boolean } = {
+	Action = true,
+	RunId = true,
+	RoomId = true,
+	CellId = true,
+	PanelId = true,
+}
+local PICKUP_ACTION_KEYS: { [string]: boolean } = { Action = true, RunId = true, RoomId = true, CellId = true }
+local ROOM_BASE_ACTION_KEYS: { [string]: boolean } = { Action = true, RunId = true, RoomId = true }
+local SIGNAL_ACTION_KEYS: { [string]: boolean } = { Action = true, RunId = true, RoomId = true, PanelId = true }
 
 local roomStartedEvent = Instance.new("BindableEvent")
 local roomProgressedEvent = Instance.new("BindableEvent")
@@ -4464,8 +5275,11 @@ function RoomService.Init()
 	assert(not initialized, "RoomService.Init called more than once")
 
 	local runServiceModule = script.Parent:FindFirstChild("RunService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
 	assert(runServiceModule and runServiceModule:IsA("ModuleScript"), "Services.RunService is missing")
+	assert(antiExploitModule and antiExploitModule:IsA("ModuleScript"), "Services.AntiExploitService is missing")
 	runService = require(runServiceModule)
+	antiExploitService = require(antiExploitModule)
 
 	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 	assert(remotes and remotes:IsA("Folder"), "ReplicatedStorage.Remotes is missing")
@@ -4992,7 +5806,33 @@ function RoomService.Cancel(runId: string, roomId: string, reason: string): (Roo
 end
 
 local function handleRemoteAction(player: Player, payload: any)
-	local action = if type(payload) == "table" and type(payload.Action) == "string" then payload.Action else "Unknown"
+	local action = if type(payload) == "table" and type(payload.Action) == "string" and #payload.Action <= 64 then payload.Action else "Unknown"
+	if not antiExploitService.AllowAction(player, "RoomAction") then
+		sendActionResult(player, action, false, "RATE_LIMITED", nil)
+		return
+	end
+	local valid = antiExploitService.ValidatePayload(payload, ROOM_ACTION_KEYS)
+	if not valid
+		or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.Action else nil)
+		or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.RunId else nil)
+		or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.RoomId else nil)
+		or (type(payload) == "table" and payload.CellId ~= nil and not antiExploitService.IsBoundedString(payload.CellId))
+		or (type(payload) == "table" and payload.PanelId ~= nil and not antiExploitService.IsBoundedString(payload.PanelId))
+	then
+		antiExploitService.RecordRejection(player, "RoomAction", "INVALID_PAYLOAD")
+		sendActionResult(player, action, false, "INVALID_PAYLOAD", nil)
+		return
+	end
+	local exactKeys = if action == "PickupCell"
+		then PICKUP_ACTION_KEYS
+		elseif action == "DepositCell" or action == "ReachExit" then ROOM_BASE_ACTION_KEYS
+		elseif action == "ActivateSignal" then SIGNAL_ACTION_KEYS
+		else nil
+	if exactKeys == nil or not antiExploitService.ValidatePayload(payload, exactKeys) then
+		antiExploitService.RecordRejection(player, "RoomAction", "UNKNOWN_ACTION_OR_FIELDS")
+		sendActionResult(player, action, false, "INVALID_PAYLOAD", nil)
+		return
+	end
 	local callSuccess, success, snapshot, actionError = pcall(RoomService.Action, player, payload)
 	if not callSuccess then
 		warn(`[RoomService] Action error for {player.UserId}: {tostring(success)}`)
@@ -5047,13 +5887,23 @@ function RoomService.StartService()
 		local session = activeRoom
 		if session ~= nil and session.RunId == run.RunId then
 			resetCarriedCellForUser(session, userId)
-			if session.RoomType == "LaserGrid" and session.Active then
-				local difficulty = BalanceConfig.Rooms.LaserGrid.Tiers[session.Tier]
+			if session.Active then
 				local remainingParticipants = runService.GetParticipants(session.RunId) or {}
-				session.RequiredCells = math.max(1, math.ceil(#remainingParticipants * difficulty.CompletionRatio))
-				LaserGridBuilder.Update(session.Build, session.DepositedCells, session.RequiredCells, session.LastDisplayedSecond)
+				if #remainingParticipants == 0 then return end
+				local difficulty = BalanceConfig.Rooms[session.RoomType].Tiers[session.Tier]
+				if session.RoomType == "ReactorRun" then
+					session.RequiredCells = difficulty.BaseCells
+						+ math.max(#remainingParticipants - 1, 0) * difficulty.CellsPerAdditionalPlayer
+					ReactorBuilder.UpdateProgress(session.Build, session.DepositedCells, session.RequiredCells)
+					ReactorBuilder.UpdateTimer(session.Build, session.LastDisplayedSecond, session.DepositedCells, session.RequiredCells)
+				elseif session.RoomType == "LaserGrid" then
+					session.RequiredCells = math.max(1, math.ceil(#remainingParticipants * difficulty.CompletionRatio))
+					LaserGridBuilder.Update(session.Build, session.DepositedCells, session.RequiredCells, session.LastDisplayedSecond)
+				end
 				if session.DepositedCells >= session.RequiredCells then
-					RoomService.Resolve(session.RunId, session.RoomId, true, "REMAINING_TEAM_ESCAPED")
+					RoomService.Resolve(session.RunId, session.RoomId, true, "REMAINING_TEAM_COMPLETED")
+				else
+					sendRoomEvent(session, "RoomProgress", makeSnapshot(session), { ParticipantLeftUserId = userId })
 				end
 			end
 		end
@@ -5072,11 +5922,11 @@ return table.freeze(RoomService)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="40">
+      <Item class="Folder" referent="43">
         <Properties>
           <string name="Name">Run</string>
         </Properties>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">StateMachine</string>
             <string name="Source"><![CDATA[--!strict
@@ -5126,7 +5976,7 @@ return table.freeze(StateMachine)
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="42">
+      <Item class="ModuleScript" referent="45">
         <Properties>
           <string name="Name">RunService</string>
           <string name="Source"><![CDATA[--!strict
@@ -5188,12 +6038,15 @@ type RunSession = {
 local RUN_CONFIG = GameConfig.Run
 local activeRun: RunSession? = nil
 local playerRunIds: { [Player]: RunId } = {}
-local lastClientActionAt: { [Player]: number } = {}
 local playerDataService: any = nil
+local antiExploitService: any = nil
 local runActionRemote: RemoteEvent? = nil
 local uiEventRemote: RemoteEvent? = nil
 local initialized = false
 local started = false
+
+local RUN_ACTION_KEYS: { [string]: boolean } = { Action = true }
+local ABANDON_ACTION_KEYS: { [string]: boolean } = { Action = true, RunId = true }
 
 local runCreatedEvent = Instance.new("BindableEvent")
 local runStateChangedEvent = Instance.new("BindableEvent")
@@ -5359,24 +6212,17 @@ local function clearActiveRun(session: RunSession)
 	end
 end
 
-local function clientActionAllowed(player: Player): boolean
-	local now = os.clock()
-	local previous = lastClientActionAt[player]
-	if previous ~= nil and now - previous < RUN_CONFIG.ClientActionCooldownSeconds then
-		return false
-	end
-	lastClientActionAt[player] = now
-	return true
-end
-
 local closeRun: (runId: RunId, reason: string) -> ()
 
 function RunService.Init()
 	assert(not initialized, "RunService.Init called more than once")
 
 	local playerDataModule = script.Parent:FindFirstChild("PlayerDataService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
 	assert(playerDataModule and playerDataModule:IsA("ModuleScript"), "Services.PlayerDataService is missing")
+	assert(antiExploitModule and antiExploitModule:IsA("ModuleScript"), "Services.AntiExploitService is missing")
 	playerDataService = require(playerDataModule)
+	antiExploitService = require(antiExploitModule)
 
 	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 	assert(remotes and remotes:IsA("Folder"), "ReplicatedStorage.Remotes is missing")
@@ -5747,6 +6593,15 @@ function RunService.StartRun(participants: { Player }): (RunSnapshot?, string?)
 		clearActiveRun(session)
 		return nil, transitionError
 	end
+	for _, player in participantMap do
+		local updated, statsError = playerDataService.UpdateProfile(player, function(profile)
+			profile.Stats.Runs += 1
+			return true, nil
+		end)
+		if not updated then
+			warn(`[RunService] Could not record run start for {player.UserId}: {statsError}`)
+		end
+	end
 	return preparationSnapshot, nil
 end
 
@@ -5783,7 +6638,7 @@ function RunService.FinishRun(runId: RunId, reason: string): (boolean, string?)
 	return true, nil
 end
 
-function RunService.RequestAbandon(player: Player, runId: RunId): (boolean, RunSnapshot?, string?)
+function RunService.RequestAbandon(player: Player, runId: RunId, reason: string?): (boolean, RunSnapshot?, string?)
 	assert(initialized, "RunService.Init must run before use")
 	local session = activeRun
 	if session == nil then
@@ -5798,9 +6653,13 @@ function RunService.RequestAbandon(player: Player, runId: RunId): (boolean, RunS
 
 	session.Participants[player.UserId] = nil
 	playerRunIds[player] = nil
+	if session.State == "DECISION" then
+		session.DecisionEligibleUserIds[player.UserId] = nil
+		session.Votes[player.UserId] = nil
+	end
 	local snapshot = makeSnapshot(session)
-	participantsChangedEvent:Fire(snapshot, player.UserId, "Abandoned")
 	sendToParticipants(session, "RunParticipantsChanged", snapshot)
+	participantsChangedEvent:Fire(snapshot, player.UserId, reason or "Abandoned")
 
 	if participantCount(session) == 0 then
 		closeRun(runId, "AllParticipantsLeft")
@@ -5810,26 +6669,36 @@ function RunService.RequestAbandon(player: Player, runId: RunId): (boolean, RunS
 end
 
 local function handleClientAction(player: Player, payload: any)
-	if not clientActionAllowed(player) then
+	if not antiExploitService.AllowAction(player, "RunAction") then
 		sendActionResult(player, "Unknown", false, "RATE_LIMITED", RunService.GetRunForPlayer(player))
 		return
 	end
-	if type(payload) ~= "table" or type(payload.Action) ~= "string" then
+	local validBase = antiExploitService.ValidatePayload(payload, ABANDON_ACTION_KEYS)
+	if not validBase or not antiExploitService.IsBoundedString(if type(payload) == "table" then payload.Action else nil) then
+		antiExploitService.RecordRejection(player, "RunAction", "INVALID_PAYLOAD")
 		sendActionResult(player, "Unknown", false, "INVALID_PAYLOAD", RunService.GetRunForPlayer(player))
 		return
 	end
 
 	local action = payload.Action
 	if action == "RequestStart" then
+		local valid = antiExploitService.ValidatePayload(payload, RUN_ACTION_KEYS)
+		if not valid then
+			antiExploitService.RecordRejection(player, "RunAction", "INVALID_START_PAYLOAD")
+			sendActionResult(player, action, false, "INVALID_PAYLOAD", RunService.GetRunForPlayer(player))
+			return
+		end
 		local snapshot, startError = RunService.StartRun({ player })
 		sendActionResult(player, action, snapshot ~= nil, startError, snapshot)
 	elseif action == "RequestAbandon" then
-		if type(payload.RunId) ~= "string" then
+		local valid = antiExploitService.ValidatePayload(payload, ABANDON_ACTION_KEYS)
+		if not valid or not antiExploitService.IsBoundedString(payload.RunId) then
+			antiExploitService.RecordRejection(player, "RunAction", "INVALID_RUN_ID")
 			sendActionResult(player, action, false, "INVALID_RUN_ID", RunService.GetRunForPlayer(player))
 			return
 		end
 
-		local abandoned, snapshot, abandonError = RunService.RequestAbandon(player, payload.RunId)
+		local abandoned, snapshot, abandonError = RunService.RequestAbandon(player, payload.RunId, "Abandoned")
 		sendActionResult(player, action, abandoned, abandonError, snapshot)
 	else
 		sendActionResult(player, action, false, "UNKNOWN_ACTION", RunService.GetRunForPlayer(player))
@@ -5846,10 +6715,9 @@ function RunService.Start()
 	remote.OnServerEvent:Connect(handleClientAction)
 
 	Players.PlayerRemoving:Connect(function(player)
-		lastClientActionAt[player] = nil
 		local runId = playerRunIds[player]
 		if runId ~= nil then
-			RunService.RequestAbandon(player, runId)
+			RunService.RequestAbandon(player, runId, "Disconnected")
 		end
 	end)
 end
@@ -5884,11 +6752,11 @@ return table.freeze(RunService)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="43">
+      <Item class="Folder" referent="46">
         <Properties>
           <string name="Name">Upgrade</string>
         </Properties>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">StateBuilder</string>
             <string name="Source"><![CDATA[--!strict
@@ -5958,12 +6826,13 @@ return table.freeze(StateBuilder)
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="45">
+      <Item class="ModuleScript" referent="48">
         <Properties>
           <string name="Name">UpgradeService</string>
           <string name="Source"><![CDATA[--!strict
 
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RobloxRunService = game:GetService("RunService")
 
@@ -5971,17 +6840,26 @@ local Shared = ReplicatedStorage:FindFirstChild("Shared")
 assert(Shared and Shared:IsA("Folder"), "ReplicatedStorage.Shared is missing")
 
 local UpgradeDefinitionsModule = Shared:FindFirstChild("UpgradeDefinitions")
+local GameConfigModule = Shared:FindFirstChild("GameConfig")
 assert(
 	UpgradeDefinitionsModule and UpgradeDefinitionsModule:IsA("ModuleScript"),
 	"Shared.UpgradeDefinitions is missing"
 )
+assert(GameConfigModule and GameConfigModule:IsA("ModuleScript"), "Shared.GameConfig is missing")
 local UpgradeDefinitions = require(UpgradeDefinitionsModule)
+local GameConfig = require(GameConfigModule)
 
 local upgradeInternal = script.Parent:FindFirstChild("Upgrade")
 assert(upgradeInternal and upgradeInternal:IsA("Folder"), "Services.Upgrade is missing")
 local StateBuilderModule = upgradeInternal:FindFirstChild("StateBuilder")
 assert(StateBuilderModule and StateBuilderModule:IsA("ModuleScript"), "Upgrade.StateBuilder is missing")
 local StateBuilder = require(StateBuilderModule)
+
+local playerDataInternal = script.Parent:FindFirstChild("PlayerData")
+assert(playerDataInternal and playerDataInternal:IsA("Folder"), "Services.PlayerData is missing")
+local OperationReceiptStoreModule = playerDataInternal:FindFirstChild("OperationReceiptStore")
+assert(OperationReceiptStoreModule and OperationReceiptStoreModule:IsA("ModuleScript"), "PlayerData.OperationReceiptStore is missing")
+local OperationReceiptStore = require(OperationReceiptStoreModule)
 
 local farmInternal = script.Parent:FindFirstChild("Farm")
 assert(farmInternal and farmInternal:IsA("Folder"), "Services.Farm is missing")
@@ -5991,6 +6869,8 @@ local PlotBuilder = require(PlotBuilderModule)
 
 local playerDataService: any = nil
 local farmService: any = nil
+local runService: any = nil
+local antiExploitService: any = nil
 local initialized = false
 local started = false
 local purchasingPlayers: { [Player]: boolean } = {}
@@ -6067,7 +6947,14 @@ local function connectPlayerPlot(player: Player)
 			if triggeringPlayer ~= player then
 				return
 			end
+			if not antiExploitService.AllowAction(triggeringPlayer, "UpgradeAction") then
+				return
+			end
 			if not isNearTerminal(triggeringPlayer, promptTerminal, purchasePrompt.MaxActivationDistance + 3) then
+				antiExploitService.RecordRejection(triggeringPlayer, "UpgradeAction", "TOO_FAR_FROM_OWN_TERMINAL")
+				return
+			end
+			if runService.GetRunForPlayer(triggeringPlayer) ~= nil then
 				return
 			end
 
@@ -6086,11 +6973,17 @@ function UpgradeService.Init()
 
 	local playerDataModule = script.Parent:FindFirstChild("PlayerDataService")
 	local farmServiceModule = script.Parent:FindFirstChild("FarmService")
+	local runServiceModule = script.Parent:FindFirstChild("RunService")
+	local antiExploitModule = script.Parent:FindFirstChild("AntiExploitService")
 	assert(playerDataModule and playerDataModule:IsA("ModuleScript"), "Services.PlayerDataService is missing")
 	assert(farmServiceModule and farmServiceModule:IsA("ModuleScript"), "Services.FarmService is missing")
+	assert(runServiceModule and runServiceModule:IsA("ModuleScript"), "Services.RunService is missing")
+	assert(antiExploitModule and antiExploitModule:IsA("ModuleScript"), "Services.AntiExploitService is missing")
 
 	playerDataService = require(playerDataModule)
 	farmService = require(farmServiceModule)
+	runService = require(runServiceModule)
+	antiExploitService = require(antiExploitModule)
 	initialized = true
 end
 
@@ -6138,10 +7031,14 @@ function UpgradeService.GetAllUpgradeStates(player: Player): ({ [string]: any }?
 	return states, nil
 end
 
-function UpgradeService.PurchaseUpgrade(player: Player, upgradeId: string): (boolean, any?, string?)
+function UpgradeService.PurchaseUpgrade(player: Player, upgradeId: string, requestId: string?): (boolean, any?, string?)
 	assert(initialized, "UpgradeService.Init must run before use")
 	if UpgradeDefinitions[upgradeId] == nil then
 		return false, nil, "UNKNOWN_UPGRADE_ID"
+	end
+	local operationId = requestId or HttpService:GenerateGUID(false)
+	if type(operationId) ~= "string" or operationId == "" or #operationId > GameConfig.Security.MaxRemoteStringLength then
+		return false, nil, "INVALID_REQUEST_ID"
 	end
 	if purchasingPlayers[player] then
 		return false, nil, "PURCHASE_IN_PROGRESS"
@@ -6149,8 +7046,17 @@ function UpgradeService.PurchaseUpgrade(player: Player, upgradeId: string): (boo
 	purchasingPlayers[player] = true
 
 	local purchasedState: any = nil
+	local replayed = false
 	local updated, updateError = playerDataService.UpdateProfile(player, function(profile)
 		local state = StateBuilder.Build(profile, UpgradeDefinitions[upgradeId])
+		local receipt, receiptError = OperationReceiptStore.Find(profile, operationId, "Upgrade", upgradeId)
+		if receiptError ~= nil then return false, receiptError end
+		if receipt ~= nil then
+			if state.CurrentLevel < receipt.TargetLevel then return false, "OPERATION_RECEIPT_CONFLICT" end
+			purchasedState = state
+			replayed = true
+			return false, "OPERATION_ALREADY_APPLIED"
+		end
 		if state.IsMaxed then
 			return false, "MAX_LEVEL"
 		end
@@ -6165,15 +7071,29 @@ function UpgradeService.PurchaseUpgrade(player: Player, upgradeId: string): (boo
 		farmService.CheckpointProfileProduction(profile, os.time())
 		profile.Coins -= state.Cost
 		StateBuilder.ApplyLevel(profile, upgradeId, state.NextLevel)
+		OperationReceiptStore.Record(profile, operationId, {
+			Kind = "Upgrade",
+			Subject = upgradeId,
+			Amount = state.Cost,
+			TargetLevel = state.NextLevel,
+			CreatedAt = os.time(),
+		}, GameConfig.PlayerData.MaxOperationReceipts)
 		purchasedState = StateBuilder.Build(profile, UpgradeDefinitions[upgradeId])
 		return true, nil
 	end)
 
 	purchasingPlayers[player] = nil
-	if not updated then
+	if not updated and not (replayed and updateError == "OPERATION_ALREADY_APPLIED") then
 		refreshPlayerTerminals(player)
 		return false, nil, updateError
 	end
+	local saved, saveError = playerDataService.SavePlayer(player)
+	if not saved then
+		warn(`[UpgradeService] Purchase {operationId} could not be confirmed for {player.UserId}: {saveError}`)
+		refreshPlayerTerminals(player)
+		return false, nil, "TRANSACTION_SAVE_FAILED"
+	end
+	if replayed then return true, purchasedState, nil end
 
 	farmService.RebuildPlayerPlot(player)
 	refreshPlayerTerminals(player)
@@ -6185,7 +7105,7 @@ function UpgradeService.DebugPurchaseUpgrade(player: Player, upgradeId: string):
 	if not RobloxRunService:IsStudio() then
 		return false, nil, "DEBUG_ONLY"
 	end
-	return UpgradeService.PurchaseUpgrade(player, upgradeId)
+	return UpgradeService.PurchaseUpgrade(player, upgradeId, HttpService:GenerateGUID(false))
 end
 
 return table.freeze(UpgradeService)
@@ -6193,54 +7113,206 @@ return table.freeze(UpgradeService)
         </Properties>
       </Item>
     </Item>
+    <Item class="Folder" referent="49">
+      <Properties>
+        <string name="Name">Tests</string>
+      </Properties>
+      <Item class="ModuleScript" referent="50">
+        <Properties>
+          <string name="Name">Stage15RecoveryTests</string>
+          <string name="Source"><![CDATA[--!strict
+
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RobloxRunService = game:GetService("RunService")
+
+local services = script.Parent.Parent:FindFirstChild("Services")
+assert(services and services:IsA("Folder"), "ServerScriptService.Services is missing")
+local playerData = services:FindFirstChild("PlayerData")
+local farm = services:FindFirstChild("Farm")
+assert(playerData and playerData:IsA("Folder"), "Services.PlayerData is missing")
+assert(farm and farm:IsA("Folder"), "Services.Farm is missing")
+
+local ProfileSchema = require(playerData:FindFirstChild("ProfileSchema") :: ModuleScript)
+local MemoryBackend = require(playerData:FindFirstChild("MemoryBackend") :: ModuleScript)
+local OperationReceiptStore = require(playerData:FindFirstChild("OperationReceiptStore") :: ModuleScript)
+local ProductionCalculator = require(farm:FindFirstChild("ProductionCalculator") :: ModuleScript)
+local BrainrotDefinitions = require(ReplicatedStorage.Shared.BrainrotDefinitions)
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+
+local Stage15RecoveryTests = {}
+
+local function check(condition: boolean, message: string)
+	assert(condition, `[Stage15RecoveryTests] {message}`)
+end
+
+local function testOperationReceipts(): number
+	local profile = ProfileSchema.CreateDefault()
+	OperationReceiptStore.Record(profile, "collect-request", {
+		Kind = "Collect",
+		Subject = "Farm",
+		Amount = 12,
+		TargetLevel = nil,
+		CreatedAt = 1,
+	}, 2)
+
+	local receipt, receiptError = OperationReceiptStore.Find(profile, "collect-request", "Collect", "Farm")
+	check(receiptError == nil and receipt ~= nil and receipt.Amount == 12, "Collect receipt must replay its result")
+	local conflictingReceipt, conflictError = OperationReceiptStore.Find(profile, "collect-request", "Upgrade", "FarmEfficiency")
+	check(conflictingReceipt == nil and conflictError == "OPERATION_RECEIPT_CONFLICT", "RequestId reuse must be rejected")
+
+	OperationReceiptStore.Record(profile, "upgrade-request-a", {
+		Kind = "Upgrade",
+		Subject = "FarmEfficiency",
+		Amount = 400,
+		TargetLevel = 2,
+		CreatedAt = 2,
+	}, 2)
+	OperationReceiptStore.Record(profile, "upgrade-request-b", {
+		Kind = "Upgrade",
+		Subject = "OfflineStorage",
+		Amount = 600,
+		TargetLevel = 2,
+		CreatedAt = 3,
+	}, 2)
+	check(profile.OperationReceipts["collect-request"] == nil, "Receipt journal must prune its oldest entry")
+	check(profile.OperationReceipts["upgrade-request-a"] ~= nil and profile.OperationReceipts["upgrade-request-b"] ~= nil, "Receipt journal must retain recent entries")
+	return 4
+end
+
+local function testSchemaMigration(): number
+	local legacy = ProfileSchema.CreateDefault()
+	legacy.SchemaVersion = 4
+	(legacy :: any).OperationReceipts = nil
+	local migrated, migrationError = ProfileSchema.Normalize(legacy)
+	check(migrationError == nil and migrated ~= nil, "Schema v4 profile must migrate")
+	check((migrated :: any).SchemaVersion == 5 and type((migrated :: any).OperationReceipts) == "table", "Migration must create the operation journal")
+	return 2
+end
+
+local function testIdempotentRelease(): number
+	local userId = -915_000_001
+	local sessionA = `recovery-a-{HttpService:GenerateGUID(false)}`
+	local backendA = MemoryBackend.new({}, sessionA)
+	local profile, loadError = backendA:Load(userId)
+	check(profile ~= nil and loadError == nil, "Mock profile must load")
+	(profile :: any).Coins = 321
+	local released, releaseError = backendA:Release(userId, profile)
+	check(released and releaseError == nil, "First profile release must succeed")
+	local releasedAgain, secondReleaseError = backendA:Release(userId, profile)
+	check(releasedAgain and secondReleaseError == nil, "Repeated release from the same session must be idempotent")
+
+	local backendB = MemoryBackend.new({}, `recovery-b-{HttpService:GenerateGUID(false)}`)
+	local reloaded, reloadError = backendB:Load(userId)
+	check(reloaded ~= nil and reloadError == nil and (reloaded :: any).Coins == 321, "Confirmed release must survive reconnect")
+	local cleanupSuccess = backendB:Release(userId, reloaded)
+	check(cleanupSuccess, "Recovery test profile must release cleanly")
+	return 5
+end
+
+local function testCollectCheckpoint(): number
+	local profile = ProfileSchema.CreateDefault()
+	local now = 10_000
+	profile.BrainrotInstances["test-instance"] = {
+		BrainrotId = "ToasterGoblin",
+		Variant = "Normal",
+		AcquiredAt = 1,
+		Source = "RecoveryTest",
+		IsLocked = false,
+		FarmSlotId = "1",
+	}
+	profile.Farm.Slots["1"] = "test-instance"
+	profile.Farm.LastCollectTimestamp = now - 60
+
+	local checkpoint = ProductionCalculator.Checkpoint(profile, BrainrotDefinitions, BalanceConfig, now)
+	local expectedProduction = BalanceConfig.Brainrots.ProductionPerMinute.ToasterGoblin
+	check(checkpoint.ClaimableCoins == expectedProduction, "One production minute must match configured production")
+	profile.Farm.AccruedCoins = math.max(0, profile.Farm.AccruedCoins - checkpoint.ClaimableCoins)
+	profile.Coins += checkpoint.ClaimableCoins
+	local immediateRetry = ProductionCalculator.Preview(profile, BrainrotDefinitions, BalanceConfig, now)
+	check(profile.Coins == expectedProduction and immediateRetry.ClaimableCoins == 0, "A repeated Collect checkpoint must not mint Coins twice")
+	return 2
+end
+
+function Stage15RecoveryTests.Run(): any
+	assert(RobloxRunService:IsStudio(), "Stage15RecoveryTests may only run in Roblox Studio")
+	local checks = 0
+	checks += testOperationReceipts()
+	checks += testSchemaMigration()
+	checks += testIdempotentRelease()
+	checks += testCollectCheckpoint()
+	local result = { Passed = true, Checks = checks }
+	print(`[Stage15RecoveryTests] PASS ({checks} checks)`)
+	return result
+end
+
+return table.freeze(Stage15RecoveryTests)
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
   </Item>
-  <Item class="StarterGui" referent="46">
+  <Item class="StarterGui" referent="51">
     <Properties>
       <string name="Name">StarterGui</string>
     </Properties>
-    <Item class="ScreenGui" referent="47">
+    <Item class="ScreenGui" referent="52">
       <Properties>
         <string name="Name">CollectionUI</string>
         <bool name="Enabled">false</bool>
         <bool name="ResetOnSpawn">false</bool>
       </Properties>
     </Item>
-    <Item class="ScreenGui" referent="48">
+    <Item class="ScreenGui" referent="53">
       <Properties>
         <string name="Name">DecisionUI</string>
         <bool name="Enabled">false</bool>
         <bool name="ResetOnSpawn">false</bool>
       </Properties>
     </Item>
-    <Item class="ScreenGui" referent="49">
+    <Item class="ScreenGui" referent="54">
+      <Properties>
+        <string name="Name">FailureUI</string>
+        <bool name="Enabled">false</bool>
+        <bool name="ResetOnSpawn">false</bool>
+      </Properties>
+    </Item>
+    <Item class="ScreenGui" referent="55">
       <Properties>
         <string name="Name">FarmUI</string>
         <bool name="Enabled">false</bool>
         <bool name="ResetOnSpawn">false</bool>
       </Properties>
     </Item>
-    <Item class="ScreenGui" referent="50">
+    <Item class="ScreenGui" referent="56">
       <Properties>
         <string name="Name">InventoryUI</string>
         <bool name="Enabled">false</bool>
         <bool name="ResetOnSpawn">false</bool>
       </Properties>
     </Item>
-    <Item class="ScreenGui" referent="51">
+    <Item class="ScreenGui" referent="57">
       <Properties>
         <string name="Name">MainHUD</string>
         <bool name="Enabled">false</bool>
         <bool name="ResetOnSpawn">false</bool>
       </Properties>
     </Item>
-    <Item class="ScreenGui" referent="52">
+    <Item class="ScreenGui" referent="58">
       <Properties>
         <string name="Name">RewardRevealUI</string>
         <bool name="Enabled">false</bool>
         <bool name="ResetOnSpawn">false</bool>
       </Properties>
     </Item>
-    <Item class="ScreenGui" referent="53">
+    <Item class="ScreenGui" referent="59">
+      <Properties>
+        <string name="Name">TutorialUI</string>
+        <bool name="Enabled">false</bool>
+        <bool name="ResetOnSpawn">false</bool>
+      </Properties>
+    </Item>
+    <Item class="ScreenGui" referent="60">
       <Properties>
         <string name="Name">UpgradeUI</string>
         <bool name="Enabled">false</bool>
@@ -6248,21 +7320,291 @@ return table.freeze(UpgradeService)
       </Properties>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="54">
+  <Item class="StarterPlayer" referent="61">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="55">
+    <Item class="StarterPlayerScripts" referent="62">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="56">
+      <Item class="Folder" referent="63">
+        <Properties>
+          <string name="Name">Client</string>
+        </Properties>
+        <Item class="ModuleScript" referent="64">
+          <Properties>
+            <string name="Name">ClientStore</string>
+            <string name="Source"><![CDATA[--!strict
+
+local changedEvent = Instance.new("BindableEvent")
+local state: any = {
+	Snapshot = nil,
+	Run = nil,
+	Room = nil,
+	OpenPanel = nil,
+}
+
+local ClientStore = {
+	Changed = changedEvent.Event,
+}
+
+function ClientStore.GetState(): any
+	return state
+end
+
+function ClientStore.SetSnapshot(snapshot: any)
+	if type(snapshot) ~= "table" then
+		return
+	end
+	state.Snapshot = snapshot
+	state.Run = snapshot.Run
+	state.Room = snapshot.Room
+	changedEvent:Fire(state, "Snapshot")
+end
+
+function ClientStore.SetOpenPanel(panelName: string?)
+	state.OpenPanel = panelName
+	changedEvent:Fire(state, "Navigation")
+end
+
+function ClientStore.ApplyServerEvent(payload: any)
+	if type(payload) ~= "table" then
+		return
+	end
+	if type(payload.Snapshot) == "table" then
+		ClientStore.SetSnapshot(payload.Snapshot)
+		return
+	end
+	if type(payload.Run) == "table" then
+		state.Run = payload.Run
+	end
+	if type(payload.Room) == "table" then
+		state.Room = payload.Room
+	end
+	if payload.Type == "RunStateChanged" and type(payload.Run) == "table" and payload.Run.State ~= "ROOM" then
+		state.Room = nil
+	elseif payload.Type == "RoomResolved" or payload.Type == "RoomCancelled" then
+		state.Room = payload.Room
+	end
+	changedEvent:Fire(state, payload.Type or "Event")
+end
+
+return table.freeze(ClientStore)
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="65">
+          <Properties>
+            <string name="Name">ProductionProjection</string>
+            <string name="Source"><![CDATA[--!strict
+
+local Workspace = game:GetService("Workspace")
+
+local ProductionProjection = {}
+
+function ProductionProjection.EstimateClaimable(snapshot: any): number
+	if type(snapshot) ~= "table" or type(snapshot.Production) ~= "table" then
+		return 0
+	end
+	local production = snapshot.Production
+	local accrued = production.AccruedCoins or production.ClaimableCoins or 0
+	local rate = production.ProductionPerMinute or 0
+	local cappedElapsed = production.CappedElapsedSeconds or 0
+	local cap = production.OfflineCapSeconds or 0
+	local serverTime = snapshot.ServerTime or Workspace:GetServerTimeNow()
+	local sinceSnapshot = math.max(0, Workspace:GetServerTimeNow() - serverTime)
+	local remainingCap = math.max(0, cap - cappedElapsed)
+	local additionalSeconds = math.min(sinceSnapshot, remainingCap)
+	return math.max(0, math.floor(accrued + rate * additionalSeconds / 60))
+end
+
+return table.freeze(ProductionProjection)
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="66">
+          <Properties>
+            <string name="Name">Theme</string>
+            <string name="Source"><![CDATA[--!strict
+
+local Theme = {
+	Colors = table.freeze({
+		Background = Color3.fromRGB(13, 17, 27),
+		Surface = Color3.fromRGB(25, 31, 46),
+		SurfaceRaised = Color3.fromRGB(36, 44, 63),
+		Text = Color3.fromRGB(246, 248, 255),
+		Muted = Color3.fromRGB(171, 181, 204),
+		Safe = Color3.fromRGB(61, 201, 120),
+		Risk = Color3.fromRGB(244, 105, 78),
+		Accent = Color3.fromRGB(91, 151, 255),
+		Dust = Color3.fromRGB(198, 126, 255),
+		Coins = Color3.fromRGB(255, 204, 76),
+		Disabled = Color3.fromRGB(78, 84, 99),
+	}),
+	RarityColors = table.freeze({
+		Common = Color3.fromRGB(177, 183, 194),
+		Uncommon = Color3.fromRGB(79, 205, 119),
+		Rare = Color3.fromRGB(77, 145, 255),
+		Epic = Color3.fromRGB(188, 91, 255),
+		Mythic = Color3.fromRGB(255, 166, 54),
+	}),
+}
+
+return table.freeze(Theme)
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="67">
+          <Properties>
+            <string name="Name">UIFactory</string>
+            <string name="Source"><![CDATA[--!strict
+
+local Players = game:GetService("Players")
+local ThemeModule = script.Parent:FindFirstChild("Theme")
+assert(ThemeModule and ThemeModule:IsA("ModuleScript"), "Client.Theme is missing")
+local Theme = require(ThemeModule)
+
+local UIFactory = {}
+
+function UIFactory.GetScreen(name: string, displayOrder: number): ScreenGui
+	local player = Players.LocalPlayer
+	local playerGui = player:FindFirstChildOfClass("PlayerGui")
+	assert(playerGui ~= nil, "LocalPlayer.PlayerGui is missing")
+	local existing = playerGui:FindFirstChild(name)
+	local screen: ScreenGui
+	if existing ~= nil and existing:IsA("ScreenGui") then
+		screen = existing
+		for _, child in screen:GetChildren() do
+			child:Destroy()
+		end
+	else
+		screen = Instance.new("ScreenGui")
+		screen.Name = name
+		screen.Parent = playerGui
+	end
+	screen.Enabled = true
+	screen.IgnoreGuiInset = false
+	screen.ResetOnSpawn = false
+	screen.DisplayOrder = displayOrder
+	screen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	return screen
+end
+
+function UIFactory.Round(instance: GuiObject, radius: number?)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or 14)
+	corner.Parent = instance
+end
+
+function UIFactory.Stroke(instance: GuiObject, color: Color3?, thickness: number?)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color or Theme.Colors.SurfaceRaised
+	stroke.Thickness = thickness or 1
+	stroke.Transparency = 0.15
+	stroke.Parent = instance
+end
+
+function UIFactory.Padding(instance: GuiObject, amount: number)
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0, amount)
+	padding.PaddingBottom = UDim.new(0, amount)
+	padding.PaddingLeft = UDim.new(0, amount)
+	padding.PaddingRight = UDim.new(0, amount)
+	padding.Parent = instance
+end
+
+function UIFactory.Text(parent: Instance, text: string, size: UDim2, position: UDim2?, textSize: number?, color: Color3?): TextLabel
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = size
+	label.Position = position or UDim2.fromOffset(0, 0)
+	label.Font = Enum.Font.GothamMedium
+	label.Text = text
+	label.TextColor3 = color or Theme.Colors.Text
+	label.TextSize = textSize or 18
+	label.TextWrapped = true
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = parent
+	return label
+end
+
+function UIFactory.Button(parent: Instance, text: string, size: UDim2, color: Color3?): TextButton
+	local button = Instance.new("TextButton")
+	button.AutoButtonColor = true
+	button.BackgroundColor3 = color or Theme.Colors.Accent
+	button.Size = size
+	button.Font = Enum.Font.GothamBold
+	button.Text = text
+	button.TextColor3 = Theme.Colors.Text
+	button.TextSize = 17
+	button.TextWrapped = true
+	button.Parent = parent
+	UIFactory.Round(button, 12)
+	return button
+end
+
+function UIFactory.Panel(parent: Instance, name: string, size: UDim2, position: UDim2): Frame
+	local panel = Instance.new("Frame")
+	panel.Name = name
+	panel.AnchorPoint = Vector2.new(0.5, 0.5)
+	panel.BackgroundColor3 = Theme.Colors.Surface
+	panel.Size = size
+	panel.Position = position
+	panel.Parent = parent
+	UIFactory.Round(panel, 18)
+	UIFactory.Stroke(panel, Theme.Colors.SurfaceRaised, 2)
+	return panel
+end
+
+function UIFactory.Overlay(screen: ScreenGui): Frame
+	local overlay = Instance.new("Frame")
+	overlay.Name = "Overlay"
+	overlay.BackgroundColor3 = Color3.new(0, 0, 0)
+	overlay.BackgroundTransparency = 0.28
+	overlay.Size = UDim2.fromScale(1, 1)
+	overlay.Active = true
+	overlay.Parent = screen
+	return overlay
+end
+
+function UIFactory.FormatNumber(value: number): string
+	local rounded = math.floor(value + 0.5)
+	local text = tostring(rounded)
+	while true do
+		local replaced, count = string.gsub(text, "^(-?%d+)(%d%d%d)", "%1,%2")
+		text = replaced
+		if count == 0 then
+			break
+		end
+	end
+	return text
+end
+
+return table.freeze(UIFactory)
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="LocalScript" referent="68">
         <Properties>
           <string name="Name">ClientBootstrap</string>
           <string name="Source"><![CDATA[--!strict
 
 local controllersFolder = script.Parent:FindFirstChild("Controllers")
+local clientFolder = script.Parent:FindFirstChild("Client")
 assert(controllersFolder and controllersFolder:IsA("Folder"), "StarterPlayerScripts.Controllers is missing")
+assert(clientFolder and clientFolder:IsA("Folder"), "StarterPlayerScripts.Client is missing")
+
+local storeModule = clientFolder:FindFirstChild("ClientStore")
+assert(storeModule and storeModule:IsA("ModuleScript"), "Client.ClientStore is missing")
+local ClientStore = require(storeModule)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local GameConfig = require(ReplicatedStorage.Shared.GameConfig)
+local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+assert(remotes and remotes:IsA("Folder"), "ReplicatedStorage.Remotes is missing")
 
 local CONTROLLER_NAMES = {
 	"HUDController",
@@ -6270,25 +7612,74 @@ local CONTROLLER_NAMES = {
 	"RoomController",
 	"FarmController",
 	"InventoryController",
+	"UpgradeController",
+	"TutorialController",
 	"InteractionController",
 	"AudioController",
 }
 
+local controllers = {}
 for _, controllerName in CONTROLLER_NAMES do
 	local controllerModule = controllersFolder:FindFirstChild(controllerName)
 	assert(controllerModule and controllerModule:IsA("ModuleScript"), `{controllerName} is missing`)
-	require(controllerModule)
+	local controller = require(controllerModule)
+	table.insert(controllers, controller)
 end
+
+local context = {
+	Player = Players.LocalPlayer,
+	Store = ClientStore,
+	Remotes = remotes,
+}
+
+for _, controller in controllers do
+	if type(controller.Init) == "function" then
+		controller.Init(context)
+	end
+end
+
+local uiEvent = remotes:FindFirstChild("UIEvent")
+assert(uiEvent and uiEvent:IsA("RemoteEvent"), "Remotes.UIEvent is missing")
+uiEvent.OnClientEvent:Connect(function(payload)
+	ClientStore.ApplyServerEvent(payload)
+	for _, controller in controllers do
+		if type(controller.HandleEvent) == "function" then
+			controller.HandleEvent(payload)
+		end
+	end
+end)
+
+for _, controller in controllers do
+	if type(controller.Start) == "function" then
+		controller.Start()
+	end
+end
+
+local snapshotRemote = remotes:FindFirstChild("GetPlayerSnapshot")
+assert(snapshotRemote and snapshotRemote:IsA("RemoteFunction"), "Remotes.GetPlayerSnapshot is missing")
+task.spawn(function()
+	for _ = 1, GameConfig.Client.InitialSnapshotAttempts do
+		local success, response = pcall(function()
+			return snapshotRemote:InvokeServer()
+		end)
+		if success and type(response) == "table" and response.Success and type(response.Snapshot) == "table" then
+			ClientStore.SetSnapshot(response.Snapshot)
+			return
+		end
+		task.wait(GameConfig.Client.InitialSnapshotRetrySeconds)
+	end
+	warn("[BrainrotTower] Initial player snapshot was not available")
+end)
 
 print(`[BrainrotTower] Client bootstrap loaded {#CONTROLLER_NAMES} controllers`)
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="57">
+      <Item class="Folder" referent="69">
         <Properties>
           <string name="Name">Controllers</string>
         </Properties>
-        <Item class="ModuleScript" referent="58">
+        <Item class="ModuleScript" referent="70">
           <Properties>
             <string name="Name">AudioController</string>
             <string name="Source"><![CDATA[--!strict
@@ -6302,35 +7693,405 @@ return table.freeze(AudioController)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="59">
+        <Item class="ModuleScript" referent="71">
           <Properties>
             <string name="Name">FarmController</string>
             <string name="Source"><![CDATA[--!strict
 
--- FarmController behavior is introduced with the related UI/gameplay stage.
-local FarmController = {
-	Name = "FarmController",
-}
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local RobloxRunService = game:GetService("RunService")
+local clientFolder = script.Parent.Parent:FindFirstChild("Client")
+assert(clientFolder and clientFolder:IsA("Folder"), "StarterPlayerScripts.Client is missing")
+local UIFactory = require(clientFolder:FindFirstChild("UIFactory") :: ModuleScript)
+local Theme = require(clientFolder:FindFirstChild("Theme") :: ModuleScript)
+local ProductionProjection = require(clientFolder:FindFirstChild("ProductionProjection") :: ModuleScript)
+local BrainrotDefinitions = require(ReplicatedStorage.Shared.BrainrotDefinitions)
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+local GameConfig = require(ReplicatedStorage.Shared.GameConfig)
+
+local store: any = nil
+local farmRemote: RemoteEvent? = nil
+local screen: ScreenGui? = nil
+local content: ScrollingFrame? = nil
+local productionCard: TextButton? = nil
+local selectedInstanceId: string? = nil
+local collectRequestId: string? = nil
+local collectPending = false
+local FarmController = { Name = "FarmController" }
+
+local function makeSection(text: string): TextLabel
+	local label = UIFactory.Text(content :: ScrollingFrame, text, UDim2.new(1, -12, 0, 38), nil, 20, Theme.Colors.Text)
+	label.Font = Enum.Font.GothamBold
+	local children = (content :: ScrollingFrame):GetChildren()
+	label.LayoutOrder = #children
+	return label
+end
+
+local function addCard(text: string, color: Color3, callback: (() -> ())?): TextButton
+	local button = UIFactory.Button(content :: ScrollingFrame, text, UDim2.new(1, -12, 0, 70), color)
+	local children = (content :: ScrollingFrame):GetChildren()
+	button.LayoutOrder = #children
+	button.TextXAlignment = Enum.TextXAlignment.Left
+	UIFactory.Padding(button, 14)
+	if callback ~= nil then button.Activated:Connect(callback) else button.Active = false end
+	return button
+end
+
+local function definitionFor(snapshot: any, instanceId: string): any?
+	local instance = snapshot.Inventory[instanceId]
+	return if instance ~= nil then BrainrotDefinitions[instance.BrainrotId] else nil
+end
+
+local function refreshProductionCard()
+	local card = productionCard
+	local snapshot = store.GetState().Snapshot
+	if card == nil or card.Parent == nil or snapshot == nil then return end
+	local production = snapshot.Production
+	card.Text = `+{UIFactory.FormatNumber(production.ProductionPerMinute or 0)} Coins/min   •   Ready: {UIFactory.FormatNumber(ProductionProjection.EstimateClaimable(snapshot))} Coins\nEfficiency {string.format("%.2fx", production.EfficiencyMultiplier or 1)}   •   Offline cap {math.floor((production.OfflineCapSeconds or 0) / 60)} min`
+end
+
+local function rebuild()
+	local frame = content
+	if frame == nil then return end
+	for _, child in frame:GetChildren() do
+		if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then child:Destroy() end
+	end
+	productionCard = nil
+	local snapshot = store.GetState().Snapshot
+	if snapshot == nil then
+		makeSection("Loading farm…")
+		return
+	end
+	makeSection("FARM PRODUCTION")
+	productionCard = addCard("Calculating production…", Theme.Colors.SurfaceRaised, nil)
+	refreshProductionCard()
+	local collectText = if collectPending
+		then "SAVING COLLECTION…"
+		elseif collectRequestId ~= nil then "RETRY COLLECTION"
+		else "COLLECT COINS"
+	addCard(collectText, if collectPending then Theme.Colors.Disabled else Theme.Colors.Coins, if collectPending then nil else function()
+		if collectRequestId == nil then collectRequestId = HttpService:GenerateGUID(false) end
+		local sentRequestId = collectRequestId
+		collectPending = true
+		(farmRemote :: RemoteEvent):FireServer({ Action = "Collect", RequestId = sentRequestId })
+		rebuild()
+		task.delay(BalanceConfig.UI.TransactionRetrySeconds, function()
+			if collectPending and collectRequestId == sentRequestId then
+				collectPending = false
+				rebuild()
+			end
+		end)
+	end).TextXAlignment = Enum.TextXAlignment.Center
+
+	makeSection(`PHYSICAL SLOTS  •  {snapshot.Farm.UnlockedSlots}/{GameConfig.Farm.MaxSlots} UNLOCKED`)
+	for slotIndex = 1, GameConfig.Farm.MaxSlots do
+		local instanceId = snapshot.Farm.Slots[tostring(slotIndex)]
+		if slotIndex > snapshot.Farm.UnlockedSlots then
+			addCard(`SLOT {slotIndex}  •  LOCKED\nUnlock it in Upgrades`, Theme.Colors.Disabled, nil)
+		elseif instanceId ~= nil then
+			local definition = definitionFor(snapshot, instanceId)
+			local name = if definition ~= nil then definition.DisplayName else "Unknown Brainrot"
+			local rarity = if definition ~= nil then definition.Rarity else "Common"
+			addCard(`SLOT {slotIndex}  •  {name}\n{string.upper(rarity)}  •  Tap to remove`, Theme.RarityColors[rarity] or Theme.Colors.Accent, function()
+				(farmRemote :: RemoteEvent):FireServer({ Action = "RemoveBrainrot", SlotIndex = slotIndex })
+			end)
+		else
+			local selected = selectedInstanceId
+			addCard(`SLOT {slotIndex}  •  EMPTY\n{if selected ~= nil then "Tap to place selected Brainrot" else "Select a permanent Brainrot below"}`, Theme.Colors.SurfaceRaised, function()
+				if selectedInstanceId ~= nil then
+					(farmRemote :: RemoteEvent):FireServer({ Action = "PlaceBrainrot", SlotIndex = slotIndex, InstanceId = selectedInstanceId })
+				end
+			end)
+		end
+	end
+
+	makeSection(`PERMANENT INVENTORY  •  SELECT TO PLACE`)
+	local instanceIds = {}
+	for instanceId, instance in snapshot.Inventory do
+		if instance.FarmSlotId == nil then table.insert(instanceIds, instanceId) end
+	end
+	table.sort(instanceIds)
+	if #instanceIds == 0 then addCard("No unassigned Brainrots yet. Claim one from the Tower.", Theme.Colors.Disabled, nil) end
+	for _, instanceId in instanceIds do
+		local definition = definitionFor(snapshot, instanceId)
+		if definition ~= nil then
+			local selected = selectedInstanceId == instanceId
+			addCard(
+				`{if selected then "✓ SELECTED  •  " else ""}{definition.DisplayName}\nPERMANENT • {string.upper(definition.Rarity)} • +{definition.BaseProductionPerMinute} Coins/min`,
+				if selected then Theme.Colors.Safe else (Theme.RarityColors[definition.Rarity] or Theme.Colors.Accent),
+				function()
+					selectedInstanceId = instanceId
+					rebuild()
+				end
+			)
+		end
+	end
+end
+
+local function update()
+	local shouldOpen = store.GetState().OpenPanel == "Farm"
+	(screen :: ScreenGui).Enabled = shouldOpen
+	if shouldOpen then rebuild() end
+end
+
+function FarmController.Init(context: any)
+	store = context.Store
+	farmRemote = context.Remotes:FindFirstChild("FarmAction") :: RemoteEvent
+	screen = UIFactory.GetScreen("FarmUI", 20)
+	UIFactory.Overlay(screen :: ScreenGui)
+	local panel = UIFactory.Panel(screen :: ScreenGui, "FarmPanel", UDim2.new(0.94, 0, 0.84, 0), UDim2.fromScale(0.5, 0.5))
+	local constraint = Instance.new("UISizeConstraint")
+	constraint.MinSize = Vector2.new(320, 300)
+	constraint.MaxSize = Vector2.new(850, 700)
+	constraint.Parent = panel
+	UIFactory.Text(panel, "MY FARM", UDim2.new(1, -100, 0, 48), UDim2.fromOffset(22, 14), 28).Font = Enum.Font.GothamBold
+	local close = UIFactory.Button(panel, "×", UDim2.fromOffset(58, 58), Theme.Colors.SurfaceRaised)
+	close.Position = UDim2.new(1, -72, 0, 10)
+	close.TextSize = 30
+	close.Activated:Connect(function() store.SetOpenPanel(nil) end)
+	content = Instance.new("ScrollingFrame")
+	content.Name = "Content"
+	content.BackgroundTransparency = 1
+	content.BorderSizePixel = 0
+	content.Position = UDim2.fromOffset(18, 76)
+	content.Size = UDim2.new(1, -36, 1, -94)
+	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	content.CanvasSize = UDim2.fromOffset(0, 0)
+	content.ScrollBarThickness = 7
+	content.Parent = panel
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 9)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = content
+	UIFactory.Padding(content :: ScrollingFrame, 4)
+	(screen :: ScreenGui).Enabled = false
+end
+
+function FarmController.Start()
+	store.Changed:Connect(update)
+	local elapsed = 0
+	RobloxRunService.Heartbeat:Connect(function(deltaTime)
+		elapsed += deltaTime
+		if elapsed >= BalanceConfig.UI.FarmProjectionRefreshSeconds then
+			elapsed = 0
+			if screen ~= nil and screen.Enabled then refreshProductionCard() end
+		end
+	end)
+	update()
+end
+
+function FarmController.HandleEvent(payload: any)
+	if type(payload) ~= "table" or payload.Type ~= "GameActionResult" then return end
+	if payload.Action == "Collect" then
+		collectPending = false
+		if payload.Success or (payload.Error ~= "TRANSACTION_SAVE_FAILED" and payload.Error ~= "COLLECT_IN_PROGRESS") then
+			collectRequestId = nil
+		end
+		rebuild()
+	elseif payload.Success and payload.Action == "PlaceBrainrot" then
+		selectedInstanceId = nil
+		rebuild()
+	end
+end
 
 return table.freeze(FarmController)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="60">
+        <Item class="ModuleScript" referent="72">
           <Properties>
             <string name="Name">HUDController</string>
             <string name="Source"><![CDATA[--!strict
 
--- HUDController behavior is introduced with the related UI/gameplay stage.
-local HUDController = {
-	Name = "HUDController",
-}
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RobloxRunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local clientFolder = script.Parent.Parent:FindFirstChild("Client")
+assert(clientFolder and clientFolder:IsA("Folder"), "StarterPlayerScripts.Client is missing")
+local UIFactory = require(clientFolder:FindFirstChild("UIFactory") :: ModuleScript)
+local Theme = require(clientFolder:FindFirstChild("Theme") :: ModuleScript)
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+
+local store: any = nil
+local runAction: RemoteEvent? = nil
+local coinsLabel: TextLabel? = nil
+local dustLabel: TextLabel? = nil
+local collectionLabel: TextLabel? = nil
+local productionLabel: TextLabel? = nil
+local runPanel: Frame? = nil
+local stageLabel: TextLabel? = nil
+local roomLabel: TextLabel? = nil
+local timerLabel: TextLabel? = nil
+local progressLabel: TextLabel? = nil
+local towerButton: TextButton? = nil
+local toastLabel: TextLabel? = nil
+local toastVersion = 0
+local HUDController = { Name = "HUDController" }
+
+local function makePill(parent: Instance, order: number, text: string, color: Color3): TextLabel
+	local label = UIFactory.Text(parent, text, UDim2.new(0.225, 0, 0, 42), nil, 14, color)
+	label.Name = `Pill{order}`
+	label.LayoutOrder = order
+	label.BackgroundColor3 = Theme.Colors.Surface
+	label.BackgroundTransparency = 0.08
+	label.TextXAlignment = Enum.TextXAlignment.Center
+	UIFactory.Round(label, 12)
+	UIFactory.Stroke(label, color, 1)
+	return label
+end
+
+local function showToast(text: string, color: Color3?)
+	local label = toastLabel
+	if label == nil then return end
+	toastVersion += 1
+	local version = toastVersion
+	label.Text = text
+	label.TextColor3 = color or Theme.Colors.Text
+	label.Visible = true
+	task.delay(BalanceConfig.UI.ToastSeconds, function()
+		if toastVersion == version and label.Parent ~= nil then label.Visible = false end
+	end)
+end
+
+local function update()
+	local state = store.GetState()
+	local snapshot = state.Snapshot
+	if snapshot ~= nil then
+		(coinsLabel :: TextLabel).Text = `◉ {UIFactory.FormatNumber(snapshot.Coins or 0)} Coins`
+		(dustLabel :: TextLabel).Text = `✦ {UIFactory.FormatNumber(snapshot.Dust or 0)} Dust`
+		(collectionLabel :: TextLabel).Text = `Index {snapshot.CollectionCount or 0}/{snapshot.DefinitionCount or 0}`
+		local production = snapshot.Production
+		(productionLabel :: TextLabel).Text = if production ~= nil then `Farm +{UIFactory.FormatNumber(production.ProductionPerMinute or 0)}/min` else "Farm loading…"
+	end
+	local run = state.Run
+	(runPanel :: Frame).Visible = run ~= nil and run.State ~= "WAITING"
+	if towerButton ~= nil then
+		local canStart = run == nil or run.State == "WAITING"
+		towerButton.Text = if canStart then "START TOWER" else "TOWER ACTIVE"
+		towerButton.Active = canStart
+		towerButton.AutoButtonColor = canStart
+		towerButton.BackgroundColor3 = if canStart then Theme.Colors.Risk else Theme.Colors.Disabled
+	end
+	if run ~= nil then
+		(stageLabel :: TextLabel).Text = `STAGE {run.Stage} / {#BalanceConfig.Run.RarityByStage}  •  {string.upper(run.CurrentRarity)}  •  {#run.ParticipantUserIds} PLAYERS`
+		(roomLabel :: TextLabel).Text = if state.Room ~= nil then state.Room.DisplayName else string.gsub(run.State, "_", " ")
+		local room = state.Room
+		if room ~= nil then
+			local completed = room.Progress or 0
+			local required = room.RequiredProgress or 0
+			(progressLabel :: TextLabel).Text = if required > 0 then `{room.Phase or "ACTIVE"}  •  {completed}/{required}` else (room.Phase or "ACTIVE")
+		else
+			(progressLabel :: TextLabel).Text = ""
+		end
+	end
+end
+
+function HUDController.Init(context: any)
+	store = context.Store
+	runAction = context.Remotes:FindFirstChild("RunAction") :: RemoteEvent
+	local screen = UIFactory.GetScreen("MainHUD", 10)
+	local topBar = Instance.new("Frame")
+	topBar.AnchorPoint = Vector2.new(0.5, 0)
+	topBar.Position = UDim2.new(0.5, 0, 0, 10)
+	topBar.Size = UDim2.new(1, -24, 0, 44)
+	topBar.BackgroundTransparency = 1
+	topBar.Parent = screen
+	local topLayout = Instance.new("UIListLayout")
+	topLayout.FillDirection = Enum.FillDirection.Horizontal
+	topLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	topLayout.Padding = UDim.new(0, 8)
+	topLayout.Parent = topBar
+	coinsLabel = makePill(topBar, 1, "◉ 0 Coins", Theme.Colors.Coins)
+	dustLabel = makePill(topBar, 2, "✦ 0 Dust", Theme.Colors.Dust)
+	collectionLabel = makePill(topBar, 3, "Index 0/0", Theme.Colors.Accent)
+	productionLabel = makePill(topBar, 4, "Farm loading…", Theme.Colors.Safe)
+
+	runPanel = UIFactory.Panel(screen, "RunHUD", UDim2.new(0.92, 0, 0, 118), UDim2.new(0.5, 0, 0, 112))
+	(runPanel :: Frame).AnchorPoint = Vector2.new(0.5, 0)
+	local runConstraint = Instance.new("UISizeConstraint")
+	runConstraint.MinSize = Vector2.new(300, 118)
+	runConstraint.MaxSize = Vector2.new(470, 118)
+	runConstraint.Parent = runPanel
+	stageLabel = UIFactory.Text(runPanel :: Frame, "STAGE", UDim2.new(1, -24, 0, 28), UDim2.fromOffset(12, 10), 21)
+	(stageLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	roomLabel = UIFactory.Text(runPanel :: Frame, "ROOM", UDim2.new(1, -86, 0, 28), UDim2.fromOffset(16, 52), 16, Theme.Colors.Muted)
+	timerLabel = UIFactory.Text(runPanel :: Frame, "", UDim2.fromOffset(64, 28), UDim2.new(1, -76, 0, 52), 18, Theme.Colors.Coins)
+	(timerLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Right
+	progressLabel = UIFactory.Text(runPanel :: Frame, "", UDim2.new(1, -32, 0, 24), UDim2.fromOffset(16, 84), 14, Theme.Colors.Muted)
+	(progressLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+
+	local nav = Instance.new("Frame")
+	nav.AnchorPoint = Vector2.new(0.5, 1)
+	nav.Position = UDim2.new(0.5, 0, 1, -14)
+	nav.Size = UDim2.new(1, -24, 0, 66)
+	nav.BackgroundTransparency = 1
+	nav.Parent = screen
+	local navLayout = Instance.new("UIListLayout")
+	navLayout.FillDirection = Enum.FillDirection.Horizontal
+	navLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	navLayout.Padding = UDim.new(0, 10)
+	navLayout.Parent = nav
+	local navigationButtons: { any } = {
+		{ Label = "FARM", Panel = "Farm", Color = Theme.Colors.Safe },
+		{ Label = "INVENTORY", Panel = "Inventory", Color = Theme.Colors.Accent },
+		{ Label = "UPGRADES", Panel = "Upgrades", Color = Theme.Colors.Dust },
+	}
+	for _, data in navigationButtons do
+		local button = UIFactory.Button(nav, data.Label, UDim2.new(0.22, 0, 0, 62), data.Color)
+		button.TextSize = 14
+		button.Activated:Connect(function() store.SetOpenPanel(data.Panel) end)
+	end
+	towerButton = UIFactory.Button(nav, "START TOWER", UDim2.new(0.22, 0, 0, 62), Theme.Colors.Risk)
+	(towerButton :: TextButton).TextSize = 14
+	(towerButton :: TextButton).Activated:Connect(function()
+		store.SetOpenPanel(nil)
+		(runAction :: RemoteEvent):FireServer({ Action = "RequestStart" })
+	end)
+
+	toastLabel = UIFactory.Text(screen, "", UDim2.new(0.9, 0, 0, 48), UDim2.new(0.5, 0, 1, -148), 17)
+	(toastLabel :: TextLabel).AnchorPoint = Vector2.new(0.5, 0)
+	local toastConstraint = Instance.new("UISizeConstraint")
+	toastConstraint.MaxSize = Vector2.new(520, 48)
+	toastConstraint.MinSize = Vector2.new(280, 48)
+	toastConstraint.Parent = toastLabel
+	(toastLabel :: TextLabel).BackgroundColor3 = Theme.Colors.Surface
+	(toastLabel :: TextLabel).BackgroundTransparency = 0.06
+	(toastLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	(toastLabel :: TextLabel).Visible = false
+	UIFactory.Round(toastLabel :: TextLabel, 12)
+	update()
+end
+
+function HUDController.Start()
+	store.Changed:Connect(update)
+	RobloxRunService.RenderStepped:Connect(function()
+		local room = store.GetState().Room
+		if timerLabel ~= nil then
+			timerLabel.Text = if room ~= nil then `{math.max(0, math.ceil(room.EndsAt - Workspace:GetServerTimeNow()))}s` else ""
+		end
+	end)
+end
+
+function HUDController.HandleEvent(payload: any)
+	if type(payload) ~= "table" then return end
+	if payload.Type == "GameActionResult" then
+		if payload.Success then
+			if payload.Action == "Collect" then
+				showToast(`Collected +{UIFactory.FormatNumber(payload.Data.CollectedCoins or 0)} Coins`, Theme.Colors.Coins)
+			elseif payload.Action == "PurchaseUpgrade" then showToast("Upgrade purchased", Theme.Colors.Safe)
+			else showToast("Farm updated", Theme.Colors.Safe) end
+		else showToast(payload.Error or "Action rejected", Theme.Colors.Risk) end
+	elseif payload.Type == "RunActionResult" and not payload.Success then
+		showToast(payload.Error or "Could not start run", Theme.Colors.Risk)
+	end
+end
 
 return table.freeze(HUDController)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="61">
+        <Item class="ModuleScript" referent="73">
           <Properties>
             <string name="Name">InteractionController</string>
             <string name="Source"><![CDATA[--!strict
@@ -6344,21 +8105,165 @@ return table.freeze(InteractionController)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="62">
+        <Item class="ModuleScript" referent="74">
           <Properties>
             <string name="Name">InventoryController</string>
             <string name="Source"><![CDATA[--!strict
 
--- InventoryController behavior is introduced with the related UI/gameplay stage.
-local InventoryController = {
-	Name = "InventoryController",
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientFolder = script.Parent.Parent:FindFirstChild("Client")
+assert(clientFolder and clientFolder:IsA("Folder"), "StarterPlayerScripts.Client is missing")
+local UIFactory = require(clientFolder:FindFirstChild("UIFactory") :: ModuleScript)
+local Theme = require(clientFolder:FindFirstChild("Theme") :: ModuleScript)
+local BrainrotDefinitions = require(ReplicatedStorage.Shared.BrainrotDefinitions)
+
+local store: any = nil
+local screen: ScreenGui? = nil
+local summaryLabel: TextLabel? = nil
+local pendingLabel: TextLabel? = nil
+local content: ScrollingFrame? = nil
+local InventoryController = { Name = "InventoryController" }
+
+local rarityOrder: { [string]: number } = {
+	Common = 1,
+	Uncommon = 2,
+	Rare = 3,
+	Epic = 4,
+	Mythic = 5,
 }
+
+local function countEntries(source: any): number
+	local count = 0
+	for _ in source do count += 1 end
+	return count
+end
+
+local function addCard(text: string, color: Color3)
+	local frame = content
+	if frame == nil then return end
+	local card = Instance.new("Frame")
+	card.BackgroundColor3 = Theme.Colors.SurfaceRaised
+	card.Size = UDim2.new(1, -12, 0, 92)
+	local children = frame:GetChildren()
+	card.LayoutOrder = #children
+	card.Parent = frame
+	UIFactory.Round(card, 12)
+	UIFactory.Stroke(card, color, 2)
+	local accent = Instance.new("Frame")
+	accent.BackgroundColor3 = color
+	accent.BorderSizePixel = 0
+	accent.Size = UDim2.fromOffset(7, 92)
+	accent.Parent = card
+	UIFactory.Round(accent, 12)
+	local label = UIFactory.Text(card, text, UDim2.new(1, -36, 1, -18), UDim2.fromOffset(22, 9), 16)
+	label.TextYAlignment = Enum.TextYAlignment.Center
+end
+
+local function rebuild()
+	local frame = content
+	if frame == nil then return end
+	for _, child in frame:GetChildren() do
+		if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then child:Destroy() end
+	end
+	local state = store.GetState()
+	local snapshot = state.Snapshot
+	if snapshot == nil then
+		(summaryLabel :: TextLabel).Text = "Loading inventory…"
+		return
+	end
+	local ownedCount = countEntries(snapshot.Inventory)
+	(summaryLabel :: TextLabel).Text = `PERMANENT COLLECTION  •  {snapshot.CollectionCount or 0}/{snapshot.DefinitionCount or 0} discovered  •  {ownedCount} owned`
+
+	local pending = if state.Run ~= nil then state.Run.PendingReward else nil
+	if pending ~= nil then
+		(pendingLabel :: TextLabel).Visible = true
+		(pendingLabel :: TextLabel).Text = `PENDING — NOT IN THIS INVENTORY\n{pending.DisplayName} can still be lost if the next challenge fails.`
+	else
+		(pendingLabel :: TextLabel).Visible = false
+	end
+
+	local entries = {}
+	for instanceId, instance in snapshot.Inventory do
+		local definition = BrainrotDefinitions[instance.BrainrotId]
+		if definition ~= nil then
+			table.insert(entries, { InstanceId = instanceId, Instance = instance, Definition = definition })
+		end
+	end
+	table.sort(entries, function(a, b)
+		local rarityA = rarityOrder[a.Definition.Rarity] or 0
+		local rarityB = rarityOrder[b.Definition.Rarity] or 0
+		if rarityA ~= rarityB then return rarityA > rarityB end
+		if a.Definition.DisplayName ~= b.Definition.DisplayName then return a.Definition.DisplayName < b.Definition.DisplayName end
+		return a.InstanceId < b.InstanceId
+	end)
+	if #entries == 0 then
+		addCard("No permanent Brainrots yet.\nComplete a Tower room and choose CLAIM.", Theme.Colors.Disabled)
+		return
+	end
+	for _, entry in entries do
+		local definition = entry.Definition
+		local location = if entry.Instance.FarmSlotId ~= nil then `WORKING IN FARM SLOT {entry.Instance.FarmSlotId}` else "READY TO PLACE ON FARM"
+		addCard(
+			`{definition.DisplayName}  •  {string.upper(definition.Rarity)}\nPERMANENT & SAFE  •  +{UIFactory.FormatNumber(definition.BaseProductionPerMinute)} Coins/min base  •  {location}`,
+			Theme.RarityColors[definition.Rarity] or Theme.Colors.Accent
+		)
+	end
+end
+
+local function update()
+	local isOpen = store.GetState().OpenPanel == "Inventory"
+	(screen :: ScreenGui).Enabled = isOpen
+	if isOpen then rebuild() end
+end
+
+function InventoryController.Init(context: any)
+	store = context.Store
+	screen = UIFactory.GetScreen("InventoryUI", 20)
+	UIFactory.Overlay(screen :: ScreenGui)
+	local panel = UIFactory.Panel(screen :: ScreenGui, "InventoryPanel", UDim2.new(0.94, 0, 0.84, 0), UDim2.fromScale(0.5, 0.5))
+	local constraint = Instance.new("UISizeConstraint")
+	constraint.MinSize = Vector2.new(320, 300)
+	constraint.MaxSize = Vector2.new(850, 700)
+	constraint.Parent = panel
+	UIFactory.Text(panel, "BRAINROT INVENTORY", UDim2.new(1, -100, 0, 44), UDim2.fromOffset(22, 12), 25).Font = Enum.Font.GothamBold
+	local close = UIFactory.Button(panel, "×", UDim2.fromOffset(58, 58), Theme.Colors.SurfaceRaised)
+	close.Position = UDim2.new(1, -72, 0, 10)
+	close.TextSize = 30
+	close.Activated:Connect(function() store.SetOpenPanel(nil) end)
+	summaryLabel = UIFactory.Text(panel, "Loading inventory…", UDim2.new(1, -44, 0, 36), UDim2.fromOffset(22, 58), 15, Theme.Colors.Muted)
+	pendingLabel = UIFactory.Text(panel, "", UDim2.new(1, -44, 0, 64), UDim2.fromOffset(22, 96), 15, Theme.Colors.Risk)
+	(pendingLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	(pendingLabel :: TextLabel).BackgroundColor3 = Theme.Colors.SurfaceRaised
+	(pendingLabel :: TextLabel).BackgroundTransparency = 0.15
+	UIFactory.Round(pendingLabel :: TextLabel, 10)
+	content = Instance.new("ScrollingFrame")
+	content.Name = "Content"
+	content.BackgroundTransparency = 1
+	content.BorderSizePixel = 0
+	content.Position = UDim2.fromOffset(18, 170)
+	content.Size = UDim2.new(1, -36, 1, -188)
+	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	content.CanvasSize = UDim2.fromOffset(0, 0)
+	content.ScrollBarThickness = 7
+	content.Parent = panel
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 9)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = content
+	UIFactory.Padding(content :: ScrollingFrame, 4)
+	(screen :: ScreenGui).Enabled = false
+end
+
+function InventoryController.Start()
+	store.Changed:Connect(update)
+	update()
+end
 
 return table.freeze(InventoryController)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="63">
+        <Item class="ModuleScript" referent="75">
           <Properties>
             <string name="Name">RoomController</string>
             <string name="Source"><![CDATA[--!strict
@@ -6372,47 +8277,610 @@ return table.freeze(RoomController)
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="64">
+        <Item class="ModuleScript" referent="76">
           <Properties>
             <string name="Name">RunController</string>
             <string name="Source"><![CDATA[--!strict
 
--- RunController behavior is introduced with the related UI/gameplay stage.
-local RunController = {
-	Name = "RunController",
-}
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RobloxRunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local clientFolder = script.Parent.Parent:FindFirstChild("Client")
+assert(clientFolder and clientFolder:IsA("Folder"), "StarterPlayerScripts.Client is missing")
+local UIFactory = require(clientFolder:FindFirstChild("UIFactory") :: ModuleScript)
+local Theme = require(clientFolder:FindFirstChild("Theme") :: ModuleScript)
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+
+local store: any = nil
+local decisionRemote: RemoteEvent? = nil
+local revealScreen: ScreenGui? = nil
+local revealCard: Frame? = nil
+local revealStatus: TextLabel? = nil
+local revealRarity: TextLabel? = nil
+local revealName: TextLabel? = nil
+local revealProduction: TextLabel? = nil
+local decisionScreen: ScreenGui? = nil
+local decisionCard: Frame? = nil
+local decisionScale: UIScale? = nil
+local pendingLabel: TextLabel? = nil
+local riskLabel: TextLabel? = nil
+local voteLabel: TextLabel? = nil
+local countdownLabel: TextLabel? = nil
+local claimButton: TextButton? = nil
+local upgradeButton: TextButton? = nil
+local failureScreen: ScreenGui? = nil
+local failureCard: Frame? = nil
+local failureTitle: TextLabel? = nil
+local failureDetails: TextLabel? = nil
+local revealVersion = 0
+local failureVersion = 0
+local revealActive = false
+local lastPendingProduction = 0
+local RunController = { Name = "RunController" }
+
+local function rarityColor(rarity: string): Color3
+	return Theme.RarityColors[rarity] or Theme.Colors.Text
+end
+
+local function addSizeConstraint(frame: Frame, maxX: number, maxY: number)
+	local constraint = Instance.new("UISizeConstraint")
+	constraint.MaxSize = Vector2.new(maxX, maxY)
+	constraint.MinSize = Vector2.new(math.min(310, maxX), math.min(250, maxY))
+	constraint.Parent = frame
+end
+
+local function showReveal(pending: any, status: string, duration: number)
+	revealVersion += 1
+	local version = revealVersion
+	revealActive = true
+	if decisionScreen ~= nil then
+		decisionScreen.Enabled = false
+	end
+	lastPendingProduction = pending.BaseProductionPerMinute or lastPendingProduction
+	(revealScreen :: ScreenGui).Enabled = true
+	(revealStatus :: TextLabel).Text = status
+	(revealRarity :: TextLabel).Text = string.upper(pending.Rarity)
+	(revealRarity :: TextLabel).TextColor3 = rarityColor(pending.Rarity)
+	(revealName :: TextLabel).Text = pending.DisplayName
+	(revealProduction :: TextLabel).Text = `Base farm production  +{UIFactory.FormatNumber(pending.BaseProductionPerMinute)} Coins/min`
+	task.delay(duration, function()
+		if revealVersion == version and revealScreen ~= nil then
+			revealScreen.Enabled = false
+			revealActive = false
+			local state = store.GetState()
+			if state.Run ~= nil and state.Run.State == "DECISION" then
+				(decisionScreen :: ScreenGui).Enabled = true
+			end
+		end
+	end)
+end
+
+local function localPlayerVoted(decision: any): boolean
+	if decision == nil then return false end
+	return table.find(decision.VotedUserIds, Players.LocalPlayer.UserId) ~= nil
+end
+
+local function updateDecision()
+	local run = store.GetState().Run
+	if run == nil or run.State ~= "DECISION" or run.PendingReward == nil or run.Decision == nil then
+		(decisionScreen :: ScreenGui).Enabled = false
+		return
+	end
+	if not revealActive then (decisionScreen :: ScreenGui).Enabled = true end
+	local pending = run.PendingReward
+	local decision = run.Decision
+	(pendingLabel :: TextLabel).Text = `CURRENT PENDING REWARD\n{string.upper(pending.Rarity)} • {pending.DisplayName}\n+{UIFactory.FormatNumber(pending.BaseProductionPerMinute)} Coins/min base`
+	(pendingLabel :: TextLabel).TextColor3 = rarityColor(pending.Rarity)
+	local nextRarity = BalanceConfig.Run.RarityByStage[run.Stage + 1]
+	if decision.CanUpgrade and nextRarity ~= nil then
+		(riskLabel :: TextLabel).Text = `UPGRADE TARGET: {string.upper(nextRarity)}\nIf the next challenge fails, {pending.DisplayName} is lost.\nYour permanent collection stays safe.`
+	else
+		(riskLabel :: TextLabel).Text = "MAXIMUM TIER REACHED\nClaim now to make this reward permanent."
+	end
+	(voteLabel :: TextLabel).Text = `CLAIM {decision.ClaimVotes}/{decision.EligibleVoterCount}     UPGRADE {decision.UpgradeVotes}/{decision.EligibleVoterCount}`
+	local voted = localPlayerVoted(decision)
+	(claimButton :: TextButton).Active = not voted
+	(claimButton :: TextButton).AutoButtonColor = not voted
+	(claimButton :: TextButton).Text = if voted then "VOTE LOCKED" else "CLAIM & EXTRACT\nSafe • becomes PERMANENT"
+	(upgradeButton :: TextButton).Active = not voted and decision.CanUpgrade
+	(upgradeButton :: TextButton).AutoButtonColor = not voted and decision.CanUpgrade
+	(upgradeButton :: TextButton).BackgroundColor3 = if decision.CanUpgrade then Theme.Colors.Risk else Theme.Colors.Disabled
+	(upgradeButton :: TextButton).Text = if decision.CanUpgrade then "UPGRADE CHALLENGE\nRisk only the PENDING reward" else "MAX TIER • CLAIM REQUIRED"
+end
+
+local function castVote(choice: string)
+	local run = store.GetState().Run
+	if run == nil or run.DecisionId == nil then return end
+	(decisionRemote :: RemoteEvent):FireServer({ Action = "Vote", RunId = run.RunId, DecisionId = run.DecisionId, Choice = choice })
+end
+
+local function showFailure(payload: any)
+	local pending = payload.LostPendingReward
+	if type(pending) ~= "table" then return end
+	failureVersion += 1
+	local version = failureVersion
+	(failureScreen :: ScreenGui).Enabled = true
+	(failureTitle :: TextLabel).Text = "PENDING REWARD LOST"
+	(failureTitle :: TextLabel).TextColor3 = rarityColor(pending.Rarity)
+	(failureDetails :: TextLabel).Text = `{pending.DisplayName} was not permanent yet.\n\nConsolation: +{UIFactory.FormatNumber(payload.ConsolationDust or 0)} Dust\n\n✓ Permanent collection unchanged`
+	task.delay(BalanceConfig.UI.FailureMessageSeconds, function()
+		if failureVersion == version and failureScreen ~= nil then failureScreen.Enabled = false end
+	end)
+end
+
+function RunController.Init(context: any)
+	store = context.Store
+	decisionRemote = context.Remotes:FindFirstChild("DecisionVote") :: RemoteEvent
+	revealScreen = UIFactory.GetScreen("RewardRevealUI", 30)
+	UIFactory.Overlay(revealScreen :: ScreenGui)
+	revealCard = UIFactory.Panel(revealScreen :: ScreenGui, "RewardCard", UDim2.new(0.9, 0, 0.46, 0), UDim2.fromScale(0.5, 0.48))
+	addSizeConstraint(revealCard :: Frame, 560, 300)
+	revealStatus = UIFactory.Text(revealCard :: Frame, "CURRENT PENDING REWARD", UDim2.new(1, -40, 0, 30), UDim2.fromOffset(20, 16), 17, Theme.Colors.Muted)
+	(revealStatus :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	revealRarity = UIFactory.Text(revealCard :: Frame, "RARE", UDim2.new(1, -40, 0, 34), UDim2.fromOffset(20, 48), 26)
+	(revealRarity :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	revealName = UIFactory.Text(revealCard :: Frame, "Brainrot", UDim2.new(1, -40, 0, 52), UDim2.fromOffset(20, 86), 32)
+	(revealName :: TextLabel).Font = Enum.Font.GothamBold
+	(revealName :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	revealProduction = UIFactory.Text(revealCard :: Frame, "+0 Coins/min", UDim2.new(1, -40, 0, 36), UDim2.fromOffset(20, 142), 19, Theme.Colors.Coins)
+	(revealProduction :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	UIFactory.Text(revealCard :: Frame, "PENDING • not in your permanent inventory yet", UDim2.new(1, -40, 0, 42), UDim2.fromOffset(20, 186), 16, Theme.Colors.Risk).TextXAlignment = Enum.TextXAlignment.Center
+	(revealScreen :: ScreenGui).Enabled = false
+
+	decisionScreen = UIFactory.GetScreen("DecisionUI", 31)
+	UIFactory.Overlay(decisionScreen :: ScreenGui)
+	decisionCard = UIFactory.Panel(decisionScreen :: ScreenGui, "DecisionCard", UDim2.new(0.94, 0, 0, 430), UDim2.fromScale(0.5, 0.5))
+	addSizeConstraint(decisionCard :: Frame, 720, 460)
+	decisionScale = Instance.new("UIScale")
+	decisionScale.Parent = decisionCard
+	pendingLabel = UIFactory.Text(decisionCard :: Frame, "CURRENT PENDING REWARD", UDim2.new(1, -40, 0, 78), UDim2.fromOffset(20, 16), 21)
+	(pendingLabel :: TextLabel).Font = Enum.Font.GothamBold
+	riskLabel = UIFactory.Text(decisionCard :: Frame, "Risk explanation", UDim2.new(1, -40, 0, 78), UDim2.fromOffset(20, 100), 16, Theme.Colors.Risk)
+	(riskLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	voteLabel = UIFactory.Text(decisionCard :: Frame, "CLAIM 0/1     UPGRADE 0/1", UDim2.new(1, -40, 0, 28), UDim2.fromOffset(20, 182), 15, Theme.Colors.Muted)
+	(voteLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	countdownLabel = UIFactory.Text(decisionCard :: Frame, `{BalanceConfig.Run.DecisionSeconds}s`, UDim2.new(1, -40, 0, 32), UDim2.fromOffset(20, 212), 19, Theme.Colors.Coins)
+	(countdownLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	claimButton = UIFactory.Button(decisionCard :: Frame, "CLAIM & EXTRACT", UDim2.new(1, -40, 0, 72), Theme.Colors.Safe)
+	(claimButton :: TextButton).Position = UDim2.fromOffset(20, 252)
+	(claimButton :: TextButton).Activated:Connect(function() castVote("CLAIM") end)
+	upgradeButton = UIFactory.Button(decisionCard :: Frame, "UPGRADE CHALLENGE", UDim2.new(1, -40, 0, 72), Theme.Colors.Risk)
+	(upgradeButton :: TextButton).Position = UDim2.fromOffset(20, 336)
+	(upgradeButton :: TextButton).Activated:Connect(function() castVote("UPGRADE") end)
+	(decisionScreen :: ScreenGui).Enabled = false
+
+	failureScreen = UIFactory.GetScreen("FailureUI", 40)
+	UIFactory.Overlay(failureScreen :: ScreenGui)
+	failureCard = UIFactory.Panel(failureScreen :: ScreenGui, "FailureCard", UDim2.new(0.9, 0, 0.46, 0), UDim2.fromScale(0.5, 0.5))
+	addSizeConstraint(failureCard :: Frame, 560, 300)
+	failureTitle = UIFactory.Text(failureCard :: Frame, "PENDING REWARD LOST", UDim2.new(1, -40, 0, 48), UDim2.fromOffset(20, 24), 26, Theme.Colors.Risk)
+	(failureTitle :: TextLabel).Font = Enum.Font.GothamBold
+	(failureTitle :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	failureDetails = UIFactory.Text(failureCard :: Frame, "Permanent collection unchanged", UDim2.new(1, -60, 0, 150), UDim2.fromOffset(30, 82), 18)
+	(failureDetails :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	(failureScreen :: ScreenGui).Enabled = false
+	updateDecision()
+end
+
+function RunController.Start()
+	store.Changed:Connect(updateDecision)
+	RobloxRunService.RenderStepped:Connect(function()
+		local run = store.GetState().Run
+		if countdownLabel ~= nil and run ~= nil and run.Decision ~= nil then
+			countdownLabel.Text = `{math.max(0, math.ceil(run.Decision.EndsAt - Workspace:GetServerTimeNow()))}s • missing votes default to CLAIM`
+		end
+		local camera = Workspace.CurrentCamera
+		if decisionScale ~= nil and camera ~= nil then
+			decisionScale.Scale = math.clamp((camera.ViewportSize.Y - 24) / 430, 0.65, 1)
+		end
+	end)
+end
+
+function RunController.HandleEvent(payload: any)
+	if type(payload) ~= "table" then return end
+	if payload.Type == "PendingRewardCreated" and payload.Run ~= nil and payload.Run.PendingReward ~= nil then
+		showReveal(payload.Run.PendingReward, "CURRENT PENDING REWARD", BalanceConfig.UI.PendingRewardRevealSeconds)
+	elseif payload.Type == "DecisionResolved" then
+		(decisionScreen :: ScreenGui).Enabled = false
+	elseif payload.Type == "PendingRewardLost" then
+		showFailure(payload)
+	elseif payload.Type == "ClaimActionResult" and payload.Success and payload.Claim ~= nil then
+		local claim = payload.Claim
+		showReveal({ Rarity = claim.Rarity, DisplayName = claim.DisplayName, BaseProductionPerMinute = lastPendingProduction }, "CLAIMED • PERMANENT & SAFE", BalanceConfig.UI.ClaimRevealSeconds)
+	end
+end
 
 return table.freeze(RunController)
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="77">
+          <Properties>
+            <string name="Name">TutorialController</string>
+            <string name="Source"><![CDATA[--!strict
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RobloxRunService = game:GetService("RunService")
+local clientFolder = script.Parent.Parent:FindFirstChild("Client")
+assert(clientFolder and clientFolder:IsA("Folder"), "StarterPlayerScripts.Client is missing")
+local UIFactory = require(clientFolder:FindFirstChild("UIFactory") :: ModuleScript)
+local Theme = require(clientFolder:FindFirstChild("Theme") :: ModuleScript)
+local ProductionProjection = require(clientFolder:FindFirstChild("ProductionProjection") :: ModuleScript)
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
+
+local store: any = nil
+local runAction: RemoteEvent? = nil
+local screen: ScreenGui? = nil
+local panel: Frame? = nil
+local hintLabel: TextLabel? = nil
+local actionButton: TextButton? = nil
+local currentAction: string? = nil
+local completionVersion = 0
+local completionActive = false
+local TutorialController = { Name = "TutorialController" }
+
+local function countOccupiedSlots(snapshot: any): number
+	local count = 0
+	for _ in snapshot.Farm.Slots do count += 1 end
+	return count
+end
+
+local function hasPurchasedUpgrade(snapshot: any): boolean
+	local upgrades = snapshot.Upgrades
+	return upgrades.SlotUnlock.CurrentLevel > UpgradeDefinitions.SlotUnlock.InitialLevel
+		or upgrades.FarmEfficiency.CurrentLevel > UpgradeDefinitions.FarmEfficiency.InitialLevel
+		or upgrades.OfflineStorage.CurrentLevel > UpgradeDefinitions.OfflineStorage.InitialLevel
+end
+
+local function cheapestAvailableUpgrade(snapshot: any): number?
+	local cheapest: number? = nil
+	for _, upgrade in snapshot.Upgrades do
+		if not upgrade.IsMaxed and upgrade.Cost ~= nil and (cheapest == nil or upgrade.Cost < cheapest) then
+			cheapest = upgrade.Cost
+		end
+	end
+	return cheapest
+end
+
+local function showHint(text: string, actionLabel: string?, action: string?)
+	(screen :: ScreenGui).Enabled = true
+	(panel :: Frame).Visible = true
+	(hintLabel :: TextLabel).Text = text
+	currentAction = action
+	(actionButton :: TextButton).Visible = actionLabel ~= nil
+	(actionButton :: TextButton).Text = actionLabel or ""
+end
+
+local function hideHint()
+	currentAction = nil
+	if screen ~= nil then screen.Enabled = false end
+end
+
+local function update()
+	if completionActive then return end
+	local state = store.GetState()
+	local snapshot = state.Snapshot
+	if snapshot == nil then
+		showHint("FIRST STEPS\nLoading your farm…", nil, nil)
+		return
+	end
+
+	local run = state.Run
+	if run ~= nil and run.State ~= "WAITING" then
+		if run.State == "ROOM" and state.Room ~= nil then
+			showHint(`TOWER OBJECTIVE\n{state.Room.ObjectiveText}`, nil, nil)
+		elseif run.State == "DECISION" then
+			hideHint()
+		else
+			showHint(`TOWER RUN\n{string.gsub(run.State, "_", " ")} — Stage {run.Stage} reward: {string.upper(run.CurrentRarity)}`, nil, nil)
+		end
+		return
+	end
+
+	if (snapshot.Stats.Claims or 0) < BalanceConfig.Tutorial.RequiredClaims then
+		showHint("FIRST STEP\nStart the Tower, finish a challenge, then CLAIM your first permanent Brainrot.", "START FIRST RUN", "StartRun")
+		return
+	end
+	if countOccupiedSlots(snapshot) == 0 then
+		showHint("PLACE YOUR REWARD\nOpen Farm, select a PERMANENT Brainrot, then tap an empty unlocked slot.", "OPEN FARM", "OpenFarm")
+		return
+	end
+	if hasPurchasedUpgrade(snapshot) then
+		hideHint()
+		return
+	end
+
+	local claimable = ProductionProjection.EstimateClaimable(snapshot)
+	local cheapest = cheapestAvailableUpgrade(snapshot)
+	if claimable >= BalanceConfig.Tutorial.MinimumCollectableCoins then
+		showHint(`COLLECT FARM COINS\nYour Brainrots produced {UIFactory.FormatNumber(claimable)} Coins. The server confirms the final amount.`, "OPEN FARM & COLLECT", "OpenFarm")
+	elseif cheapest ~= nil and snapshot.Coins >= cheapest then
+		showHint(`BUY A GUARANTEED UPGRADE\nYou have {UIFactory.FormatNumber(snapshot.Coins)} Coins. Every upgrade shows its exact before → after effect.`, "OPEN UPGRADES", "OpenUpgrades")
+	elseif (snapshot.Coins or 0) == 0 then
+		showHint(`FARM IS WORKING\nProduction: +{UIFactory.FormatNumber(snapshot.Production.ProductionPerMinute or 0)} Coins/min. Wait briefly, then collect.`, "OPEN FARM", "OpenFarm")
+	else
+		showHint(`GROW TOWARD AN UPGRADE\nYou have {UIFactory.FormatNumber(snapshot.Coins)} Coins; the cheapest upgrade costs {UIFactory.FormatNumber(cheapest or 0)}. Your farm keeps working during another run.`, "START ANOTHER RUN", "StartRun")
+	end
+end
+
+local function runCurrentAction()
+	if currentAction == "OpenFarm" then
+		store.SetOpenPanel("Farm")
+	elseif currentAction == "OpenUpgrades" then
+		store.SetOpenPanel("Upgrades")
+	elseif currentAction == "StartRun" then
+		completionActive = false
+		hideHint()
+		store.SetOpenPanel(nil)
+		(runAction :: RemoteEvent):FireServer({ Action = "RequestStart" })
+	end
+end
+
+local function showCompletion()
+	completionVersion += 1
+	local version = completionVersion
+	completionActive = true
+	showHint("FIRST LOOP COMPLETE\nYour permanent Brainrot now powers an upgraded farm. Start another Tower run to grow faster.", "START NEXT RUN", "StartRun")
+	task.delay(BalanceConfig.UI.TutorialCompletionSeconds, function()
+		if completionVersion == version then
+			completionActive = false
+			update()
+		end
+	end)
+end
+
+function TutorialController.Init(context: any)
+	store = context.Store
+	runAction = context.Remotes:FindFirstChild("RunAction") :: RemoteEvent
+	screen = UIFactory.GetScreen("TutorialUI", 15)
+	panel = UIFactory.Panel(screen :: ScreenGui, "TutorialPanel", UDim2.new(0.9, 0, 0, 132), UDim2.new(0.5, 0, 1, -92))
+	(panel :: Frame).AnchorPoint = Vector2.new(0.5, 1)
+	local constraint = Instance.new("UISizeConstraint")
+	constraint.MinSize = Vector2.new(300, 132)
+	constraint.MaxSize = Vector2.new(520, 132)
+	constraint.Parent = panel
+	hintLabel = UIFactory.Text(panel :: Frame, "FIRST STEPS", UDim2.new(1, -28, 0, 72), UDim2.fromOffset(14, 7), 15)
+	(hintLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	actionButton = UIFactory.Button(panel :: Frame, "CONTINUE", UDim2.new(1, -28, 0, 46), Theme.Colors.Accent)
+	(actionButton :: TextButton).Position = UDim2.fromOffset(14, 80)
+	(actionButton :: TextButton).TextSize = 15
+	(actionButton :: TextButton).Activated:Connect(runCurrentAction)
+	(screen :: ScreenGui).Enabled = false
+end
+
+function TutorialController.Start()
+	store.Changed:Connect(update)
+	local elapsed = 0
+	RobloxRunService.Heartbeat:Connect(function(deltaTime)
+		elapsed += deltaTime
+		if elapsed >= BalanceConfig.UI.TutorialRefreshSeconds then
+			elapsed = 0
+			update()
+		end
+	end)
+	update()
+end
+
+function TutorialController.HandleEvent(payload: any)
+	if type(payload) == "table" and payload.Type == "GameActionResult" and payload.Success and payload.Action == "PurchaseUpgrade" then
+		showCompletion()
+	end
+end
+
+return table.freeze(TutorialController)
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="78">
+          <Properties>
+            <string name="Name">UpgradeController</string>
+            <string name="Source"><![CDATA[--!strict
+
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientFolder = script.Parent.Parent:FindFirstChild("Client")
+assert(clientFolder and clientFolder:IsA("Folder"), "StarterPlayerScripts.Client is missing")
+local UIFactory = require(clientFolder:FindFirstChild("UIFactory") :: ModuleScript)
+local Theme = require(clientFolder:FindFirstChild("Theme") :: ModuleScript)
+local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+
+local store: any = nil
+local upgradeRemote: RemoteEvent? = nil
+local screen: ScreenGui? = nil
+local coinsLabel: TextLabel? = nil
+local content: ScrollingFrame? = nil
+local purchasePending = false
+local purchaseRequestId: string? = nil
+local purchaseUpgradeId: string? = nil
+local UpgradeController = { Name = "UpgradeController" }
+local rebuild: () -> ()
+
+local upgradeOrder = { "SlotUnlock", "FarmEfficiency", "OfflineStorage" }
+local effectText: { [string]: string } = {
+	SlotUnlock = "Adds one usable physical pedestal to your farm.",
+	FarmEfficiency = "Multiplies the combined production of all placed Brainrots.",
+	OfflineStorage = "Raises the maximum production time stored while you are away.",
+}
+
+local function addUpgradeCard(upgradeId: string, state: any, coins: number)
+	local frame = content
+	if frame == nil then return end
+	local card = Instance.new("Frame")
+	card.BackgroundColor3 = Theme.Colors.SurfaceRaised
+	card.Size = UDim2.new(1, -12, 0, 184)
+	local children = frame:GetChildren()
+	card.LayoutOrder = #children
+	card.Parent = frame
+	UIFactory.Round(card, 14)
+	UIFactory.Stroke(card, if state.IsMaxed then Theme.Colors.Safe else Theme.Colors.Dust, 2)
+
+	local title = UIFactory.Text(card, state.DisplayName, UDim2.new(1, -32, 0, 30), UDim2.fromOffset(16, 10), 21)
+	title.Font = Enum.Font.GothamBold
+	local levelText = if state.IsMaxed then `LEVEL {state.CurrentLevel}/{state.MaxLevel}  •  MAX` else `LEVEL {state.CurrentLevel}/{state.MaxLevel}`
+	UIFactory.Text(card, levelText, UDim2.new(1, -32, 0, 22), UDim2.fromOffset(16, 40), 14, if state.IsMaxed then Theme.Colors.Safe else Theme.Colors.Muted)
+	local values = if state.IsMaxed then `CURRENT EFFECT: {state.CurrentValueText}` else `EFFECT: {state.CurrentValueText}  →  {state.NextValueText}`
+	local valuesLabel = UIFactory.Text(card, values, UDim2.new(1, -32, 0, 28), UDim2.fromOffset(16, 64), 18, Theme.Colors.Coins)
+	valuesLabel.Font = Enum.Font.GothamBold
+	UIFactory.Text(card, effectText[upgradeId] or state.Description, UDim2.new(1, -32, 0, 36), UDim2.fromOffset(16, 94), 14, Theme.Colors.Muted)
+
+	local buttonText: string
+	local buttonColor: Color3
+	local isRetry = purchaseRequestId ~= nil and purchaseUpgradeId == upgradeId
+	local canBuy = not purchasePending and (isRetry or (not state.IsMaxed and state.Cost ~= nil and coins >= state.Cost))
+	if purchasePending then
+		buttonText = "PURCHASE PENDING…"
+		buttonColor = Theme.Colors.Disabled
+	elseif isRetry then
+		buttonText = "RETRY PURCHASE SAVE"
+		buttonColor = Theme.Colors.Dust
+	elseif state.IsMaxed then
+		buttonText = "MAXIMUM UPGRADE REACHED"
+		buttonColor = Theme.Colors.Safe
+	elseif canBuy then
+		buttonText = `BUY FOR {UIFactory.FormatNumber(state.Cost)} COINS`
+		buttonColor = Theme.Colors.Dust
+	else
+		buttonText = `NEED {UIFactory.FormatNumber(state.Cost or 0)} COINS`
+		buttonColor = Theme.Colors.Disabled
+	end
+	local purchase = UIFactory.Button(card, buttonText, UDim2.new(1, -32, 0, 48), buttonColor)
+	purchase.Position = UDim2.fromOffset(16, 130)
+	purchase.TextSize = 15
+	purchase.Active = canBuy
+	purchase.AutoButtonColor = canBuy
+	if canBuy then
+		purchase.Activated:Connect(function()
+			if purchasePending then return end
+			if purchaseRequestId == nil or purchaseUpgradeId ~= upgradeId then
+				purchaseRequestId = HttpService:GenerateGUID(false)
+				purchaseUpgradeId = upgradeId
+			end
+			local sentRequestId = purchaseRequestId
+			purchasePending = true
+			(upgradeRemote :: RemoteEvent):FireServer({
+				Action = "PurchaseUpgrade",
+				UpgradeId = upgradeId,
+				RequestId = sentRequestId,
+			})
+			rebuild()
+			task.delay(BalanceConfig.UI.TransactionRetrySeconds, function()
+				if purchasePending and purchaseRequestId == sentRequestId then
+					purchasePending = false
+					rebuild()
+				end
+			end)
+		end)
+	end
+end
+
+rebuild = function()
+	local frame = content
+	if frame == nil then return end
+	for _, child in frame:GetChildren() do
+		if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then child:Destroy() end
+	end
+	local snapshot = store.GetState().Snapshot
+	if snapshot == nil then
+		(coinsLabel :: TextLabel).Text = "Loading upgrades…"
+		return
+	end
+	local coins = snapshot.Coins or 0
+	(coinsLabel :: TextLabel).Text = `BALANCE  •  {UIFactory.FormatNumber(coins)} COINS`
+	for _, upgradeId in upgradeOrder do
+		local state = snapshot.Upgrades[upgradeId]
+		if state ~= nil then addUpgradeCard(upgradeId, state, coins) end
+	end
+end
+
+local function update()
+	local isOpen = store.GetState().OpenPanel == "Upgrades"
+	(screen :: ScreenGui).Enabled = isOpen
+	if isOpen then rebuild() end
+end
+
+function UpgradeController.Init(context: any)
+	store = context.Store
+	upgradeRemote = context.Remotes:FindFirstChild("UpgradeAction") :: RemoteEvent
+	screen = UIFactory.GetScreen("UpgradeUI", 20)
+	UIFactory.Overlay(screen :: ScreenGui)
+	local panel = UIFactory.Panel(screen :: ScreenGui, "UpgradePanel", UDim2.new(0.94, 0, 0.84, 0), UDim2.fromScale(0.5, 0.5))
+	local constraint = Instance.new("UISizeConstraint")
+	constraint.MinSize = Vector2.new(320, 300)
+	constraint.MaxSize = Vector2.new(760, 700)
+	constraint.Parent = panel
+	UIFactory.Text(panel, "FARM UPGRADES", UDim2.new(1, -100, 0, 44), UDim2.fromOffset(22, 12), 26).Font = Enum.Font.GothamBold
+	local close = UIFactory.Button(panel, "×", UDim2.fromOffset(58, 58), Theme.Colors.SurfaceRaised)
+	close.Position = UDim2.new(1, -72, 0, 10)
+	close.TextSize = 30
+	close.Activated:Connect(function() store.SetOpenPanel(nil) end)
+	coinsLabel = UIFactory.Text(panel, "Loading upgrades…", UDim2.new(1, -44, 0, 32), UDim2.fromOffset(22, 58), 16, Theme.Colors.Coins)
+	content = Instance.new("ScrollingFrame")
+	content.Name = "Content"
+	content.BackgroundTransparency = 1
+	content.BorderSizePixel = 0
+	content.Position = UDim2.fromOffset(18, 96)
+	content.Size = UDim2.new(1, -36, 1, -114)
+	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	content.CanvasSize = UDim2.fromOffset(0, 0)
+	content.ScrollBarThickness = 7
+	content.Parent = panel
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 10)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = content
+	UIFactory.Padding(content :: ScrollingFrame, 4)
+	(screen :: ScreenGui).Enabled = false
+end
+
+function UpgradeController.Start()
+	store.Changed:Connect(update)
+	update()
+end
+
+function UpgradeController.HandleEvent(payload: any)
+	if type(payload) == "table" and payload.Type == "GameActionResult" and payload.Action == "PurchaseUpgrade" then
+		purchasePending = false
+		if payload.Success or (payload.Error ~= "TRANSACTION_SAVE_FAILED" and payload.Error ~= "PURCHASE_IN_PROGRESS") then
+			purchaseRequestId = nil
+			purchaseUpgradeId = nil
+		end
+		rebuild()
+	end
+end
+
+return table.freeze(UpgradeController)
 ]]></string>
           </Properties>
         </Item>
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="65">
+  <Item class="Workspace" referent="79">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="NeedsPivotMigration">false</bool>
     </Properties>
-    <Item class="Folder" referent="66">
+    <Item class="Folder" referent="80">
       <Properties>
         <string name="Name">FarmPlots</string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="67">
+    <Item class="Folder" referent="81">
       <Properties>
         <string name="Name">Lobby</string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="68">
+    <Item class="Folder" referent="82">
       <Properties>
         <string name="Name">Tower</string>
       </Properties>
-      <Item class="Folder" referent="69">
+      <Item class="Folder" referent="83">
         <Properties>
           <string name="Name">Biome01</string>
         </Properties>
-        <Item class="Folder" referent="70">
+        <Item class="Folder" referent="84">
           <Properties>
             <string name="Name">RoomSpawnPoints</string>
           </Properties>
