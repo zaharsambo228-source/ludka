@@ -1,0 +1,4 @@
+# This file pins the local Roblox toolchain for reproducible project builds.
+
+[tools]
+rojo = "rojo-rbx/rojo@7.7.0"

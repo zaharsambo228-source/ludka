@@ -1,0 +1,119 @@
+{
+  "name": "BrainrotTower",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Remotes": {
+        "$className": "Folder",
+        "RunAction": {
+          "$className": "RemoteEvent"
+        },
+        "DecisionVote": {
+          "$className": "RemoteEvent"
+        },
+        "RoomAction": {
+          "$className": "RemoteEvent"
+        },
+        "FarmAction": {
+          "$className": "RemoteEvent"
+        },
+        "InventoryAction": {
+          "$className": "RemoteEvent"
+        },
+        "UIEvent": {
+          "$className": "RemoteEvent"
+        }
+      },
+      "Shared": {
+        "$path": "src/ReplicatedStorage/Shared"
+      }
+    },
+
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$path": "src/ServerScriptService"
+    },
+
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$path": "src/StarterPlayer/StarterPlayerScripts"
+      }
+    },
+
+    "StarterGui": {
+      "$className": "StarterGui",
+      "MainHUD": {
+        "$className": "ScreenGui",
+        "$properties": {
+          "Enabled": false,
+          "ResetOnSpawn": false
+        }
+      },
+      "DecisionUI": {
+        "$className": "ScreenGui",
+        "$properties": {
+          "Enabled": false,
+          "ResetOnSpawn": false
+        }
+      },
+      "RewardRevealUI": {
+        "$className": "ScreenGui",
+        "$properties": {
+          "Enabled": false,
+          "ResetOnSpawn": false
+        }
+      },
+      "InventoryUI": {
+        "$className": "ScreenGui",
+        "$properties": {
+          "Enabled": false,
+          "ResetOnSpawn": false
+        }
+      },
+      "FarmUI": {
+        "$className": "ScreenGui",
+        "$properties": {
+          "Enabled": false,
+          "ResetOnSpawn": false
+        }
+      },
+      "UpgradeUI": {
+        "$className": "ScreenGui",
+        "$properties": {
+          "Enabled": false,
+          "ResetOnSpawn": false
+        }
+      },
+      "CollectionUI": {
+        "$className": "ScreenGui",
+        "$properties": {
+          "Enabled": false,
+          "ResetOnSpawn": false
+        }
+      }
+    },
+
+    "Workspace": {
+      "$className": "Workspace",
+      "Lobby": {
+        "$className": "Folder"
+      },
+      "FarmPlots": {
+        "$className": "Folder"
+      },
+      "Tower": {
+        "$className": "Folder",
+        "Biome01": {
+          "$className": "Folder",
+          "RoomSpawnPoints": {
+            "$className": "Folder"
+          }
+        }
+      }
+    }
+  }
+}
