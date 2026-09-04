@@ -62,7 +62,7 @@ local function rebuild()
 		return
 	end
 	local ownedCount = countEntries(snapshot.Inventory)
-	(summaryLabel :: TextLabel).Text = `PERMANENT COLLECTION  •  {snapshot.CollectionCount or 0}/{snapshot.DefinitionCount or 0} discovered  •  {ownedCount} owned`
+	;(summaryLabel :: TextLabel).Text = `PERMANENT COLLECTION  •  {snapshot.CollectionCount or 0}/{snapshot.DefinitionCount or 0} discovered  •  {ownedCount} owned`
 
 	local pending = if state.Run ~= nil then state.Run.PendingReward else nil
 	if pending ~= nil then
@@ -122,9 +122,9 @@ function InventoryController.Init(context: any)
 	close.Activated:Connect(function() store.SetOpenPanel(nil) end)
 	summaryLabel = UIFactory.Text(panel, "Loading inventory…", UDim2.new(1, -44, 0, 36), UDim2.fromOffset(22, 58), 15, Theme.Colors.Muted)
 	pendingLabel = UIFactory.Text(panel, "", UDim2.new(1, -44, 0, 64), UDim2.fromOffset(22, 96), 15, Theme.Colors.Risk)
-	(pendingLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
-	(pendingLabel :: TextLabel).BackgroundColor3 = Theme.Colors.SurfaceRaised
-	(pendingLabel :: TextLabel).BackgroundTransparency = 0.15
+	;(pendingLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	;(pendingLabel :: TextLabel).BackgroundColor3 = Theme.Colors.SurfaceRaised
+	;(pendingLabel :: TextLabel).BackgroundTransparency = 0.15
 	UIFactory.Round(pendingLabel :: TextLabel, 10)
 	content = Instance.new("ScrollingFrame")
 	content.Name = "Content"
@@ -141,7 +141,7 @@ function InventoryController.Init(context: any)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = content
 	UIFactory.Padding(content :: ScrollingFrame, 4)
-	(screen :: ScreenGui).Enabled = false
+	;(screen :: ScreenGui).Enabled = false
 end
 
 function InventoryController.Start()

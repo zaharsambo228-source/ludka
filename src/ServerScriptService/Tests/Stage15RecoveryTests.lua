@@ -74,7 +74,7 @@ local function testIdempotentRelease(): number
 	local backendA = MemoryBackend.new({}, sessionA)
 	local profile, loadError = backendA:Load(userId)
 	check(profile ~= nil and loadError == nil, "Mock profile must load")
-	(profile :: any).Coins = 321
+	;(profile :: any).Coins = 321
 	local released, releaseError = backendA:Release(userId, profile)
 	check(released and releaseError == nil, "First profile release must succeed")
 	local releasedAgain, secondReleaseError = backendA:Release(userId, profile)

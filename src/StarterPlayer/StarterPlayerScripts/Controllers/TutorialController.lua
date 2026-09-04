@@ -49,7 +49,7 @@ local function showHint(text: string, actionLabel: string?, action: string?)
 	(panel :: Frame).Visible = true
 	(hintLabel :: TextLabel).Text = text
 	currentAction = action
-	(actionButton :: TextButton).Visible = actionLabel ~= nil
+	;(actionButton :: TextButton).Visible = actionLabel ~= nil
 	(actionButton :: TextButton).Text = actionLabel or ""
 end
 
@@ -114,7 +114,7 @@ local function runCurrentAction()
 		completionActive = false
 		hideHint()
 		store.SetOpenPanel(nil)
-		(runAction :: RemoteEvent):FireServer({ Action = "RequestStart" })
+		;(runAction :: RemoteEvent):FireServer({ Action = "RequestStart" })
 	end
 end
 
@@ -136,18 +136,18 @@ function TutorialController.Init(context: any)
 	runAction = context.Remotes:FindFirstChild("RunAction") :: RemoteEvent
 	screen = UIFactory.GetScreen("TutorialUI", 15)
 	panel = UIFactory.Panel(screen :: ScreenGui, "TutorialPanel", UDim2.new(0.9, 0, 0, 132), UDim2.new(0.5, 0, 1, -92))
-	(panel :: Frame).AnchorPoint = Vector2.new(0.5, 1)
+	;(panel :: Frame).AnchorPoint = Vector2.new(0.5, 1)
 	local constraint = Instance.new("UISizeConstraint")
 	constraint.MinSize = Vector2.new(300, 132)
 	constraint.MaxSize = Vector2.new(520, 132)
 	constraint.Parent = panel
 	hintLabel = UIFactory.Text(panel :: Frame, "FIRST STEPS", UDim2.new(1, -28, 0, 72), UDim2.fromOffset(14, 7), 15)
-	(hintLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	;(hintLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
 	actionButton = UIFactory.Button(panel :: Frame, "CONTINUE", UDim2.new(1, -28, 0, 46), Theme.Colors.Accent)
-	(actionButton :: TextButton).Position = UDim2.fromOffset(14, 80)
-	(actionButton :: TextButton).TextSize = 15
+	;(actionButton :: TextButton).Position = UDim2.fromOffset(14, 80)
+	;(actionButton :: TextButton).TextSize = 15
 	(actionButton :: TextButton).Activated:Connect(runCurrentAction)
-	(screen :: ScreenGui).Enabled = false
+	;(screen :: ScreenGui).Enabled = false
 end
 
 function TutorialController.Start()

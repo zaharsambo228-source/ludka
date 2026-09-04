@@ -58,10 +58,10 @@ local function update()
 		(dustLabel :: TextLabel).Text = `✦ {UIFactory.FormatNumber(snapshot.Dust or 0)} Dust`
 		(collectionLabel :: TextLabel).Text = `Index {snapshot.CollectionCount or 0}/{snapshot.DefinitionCount or 0}`
 		local production = snapshot.Production
-		(productionLabel :: TextLabel).Text = if production ~= nil then `Farm +{UIFactory.FormatNumber(production.ProductionPerMinute or 0)}/min` else "Farm loading…"
+		;(productionLabel :: TextLabel).Text = if production ~= nil then `Farm +{UIFactory.FormatNumber(production.ProductionPerMinute or 0)}/min` else "Farm loading…"
 	end
 	local run = state.Run
-	(runPanel :: Frame).Visible = run ~= nil and run.State ~= "WAITING"
+	;(runPanel :: Frame).Visible = run ~= nil and run.State ~= "WAITING"
 	if towerButton ~= nil then
 		local canStart = run == nil or run.State == "WAITING"
 		towerButton.Text = if canStart then "START TOWER" else "TOWER ACTIVE"
@@ -104,18 +104,18 @@ function HUDController.Init(context: any)
 	productionLabel = makePill(topBar, 4, "Farm loading…", Theme.Colors.Safe)
 
 	runPanel = UIFactory.Panel(screen, "RunHUD", UDim2.new(0.92, 0, 0, 118), UDim2.new(0.5, 0, 0, 112))
-	(runPanel :: Frame).AnchorPoint = Vector2.new(0.5, 0)
+	;(runPanel :: Frame).AnchorPoint = Vector2.new(0.5, 0)
 	local runConstraint = Instance.new("UISizeConstraint")
 	runConstraint.MinSize = Vector2.new(300, 118)
 	runConstraint.MaxSize = Vector2.new(470, 118)
 	runConstraint.Parent = runPanel
 	stageLabel = UIFactory.Text(runPanel :: Frame, "STAGE", UDim2.new(1, -24, 0, 28), UDim2.fromOffset(12, 10), 21)
-	(stageLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	;(stageLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
 	roomLabel = UIFactory.Text(runPanel :: Frame, "ROOM", UDim2.new(1, -86, 0, 28), UDim2.fromOffset(16, 52), 16, Theme.Colors.Muted)
 	timerLabel = UIFactory.Text(runPanel :: Frame, "", UDim2.fromOffset(64, 28), UDim2.new(1, -76, 0, 52), 18, Theme.Colors.Coins)
-	(timerLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Right
+	;(timerLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Right
 	progressLabel = UIFactory.Text(runPanel :: Frame, "", UDim2.new(1, -32, 0, 24), UDim2.fromOffset(16, 84), 14, Theme.Colors.Muted)
-	(progressLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
+	;(progressLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
 
 	local nav = Instance.new("Frame")
 	nav.AnchorPoint = Vector2.new(0.5, 1)
@@ -139,22 +139,22 @@ function HUDController.Init(context: any)
 		button.Activated:Connect(function() store.SetOpenPanel(data.Panel) end)
 	end
 	towerButton = UIFactory.Button(nav, "START TOWER", UDim2.new(0.22, 0, 0, 62), Theme.Colors.Risk)
-	(towerButton :: TextButton).TextSize = 14
+	;(towerButton :: TextButton).TextSize = 14
 	(towerButton :: TextButton).Activated:Connect(function()
 		store.SetOpenPanel(nil)
-		(runAction :: RemoteEvent):FireServer({ Action = "RequestStart" })
+		;(runAction :: RemoteEvent):FireServer({ Action = "RequestStart" })
 	end)
 
 	toastLabel = UIFactory.Text(screen, "", UDim2.new(0.9, 0, 0, 48), UDim2.new(0.5, 0, 1, -148), 17)
-	(toastLabel :: TextLabel).AnchorPoint = Vector2.new(0.5, 0)
+	;(toastLabel :: TextLabel).AnchorPoint = Vector2.new(0.5, 0)
 	local toastConstraint = Instance.new("UISizeConstraint")
 	toastConstraint.MaxSize = Vector2.new(520, 48)
 	toastConstraint.MinSize = Vector2.new(280, 48)
 	toastConstraint.Parent = toastLabel
-	(toastLabel :: TextLabel).BackgroundColor3 = Theme.Colors.Surface
-	(toastLabel :: TextLabel).BackgroundTransparency = 0.06
+	;(toastLabel :: TextLabel).BackgroundColor3 = Theme.Colors.Surface
+	;(toastLabel :: TextLabel).BackgroundTransparency = 0.06
 	(toastLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
-	(toastLabel :: TextLabel).Visible = false
+	;(toastLabel :: TextLabel).Visible = false
 	UIFactory.Round(toastLabel :: TextLabel, 12)
 	update()
 end

@@ -153,7 +153,7 @@ function UpgradeController.Init(context: any)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = content
 	UIFactory.Padding(content :: ScrollingFrame, 4)
-	(screen :: ScreenGui).Enabled = false
+	;(screen :: ScreenGui).Enabled = false
 end
 
 function UpgradeController.Start()
