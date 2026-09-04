@@ -135,8 +135,8 @@ function TutorialController.Init(context: any)
 	store = context.Store
 	runAction = context.Remotes:FindFirstChild("RunAction") :: RemoteEvent
 	screen = UIFactory.GetScreen("TutorialUI", 15)
-	panel = UIFactory.Panel(screen :: ScreenGui, "TutorialPanel", UDim2.new(0.9, 0, 0, 132), UDim2.new(0.5, 0, 1, -92))
-	(panel :: Frame).AnchorPoint = Vector2.new(0.5, 1)
+	panel = UIFactory.Panel(screen :: ScreenGui, "TutorialPanel", UDim2.new((9 / 10), 0, 0, 132), UDim2.new((1 / 2), 0, 1, -92))
+	(panel :: Frame).AnchorPoint = Vector2.new((1 / 2), 1)
 	local constraint = Instance.new("UISizeConstraint")
 	constraint.MinSize = Vector2.new(300, 132)
 	constraint.MaxSize = Vector2.new(520, 132)

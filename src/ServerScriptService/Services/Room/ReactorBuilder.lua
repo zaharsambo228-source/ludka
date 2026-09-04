@@ -47,7 +47,7 @@ local function createBillboard(adornee: BasePart, name: string, text: string, of
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.TextScaled = true
 	label.TextStrokeColor3 = Color3.new(0, 0, 0)
-	label.TextStrokeTransparency = 0.3
+	label.TextStrokeTransparency = (3 / 10)
 	label.Parent = billboard
 end
 
@@ -77,7 +77,7 @@ function ReactorBuilder.Create(
 		model,
 		"Floor",
 		arenaSize,
-		CFrame.new(origin + Vector3.new(0, -0.5, 0)),
+		CFrame.new(origin + Vector3.new(0, -(1 / 2), 0)),
 		Color3.fromRGB(35, 43, 54),
 		Enum.Material.Metal
 	)
@@ -120,7 +120,7 @@ function ReactorBuilder.Create(
 		model,
 		"ObjectiveSign",
 		Vector3.new(18, 5, 1),
-		CFrame.new(origin + Vector3.new(0, 5, -arenaSize.Z / 2 + 0.6)),
+		CFrame.new(origin + Vector3.new(0, 5, -arenaSize.Z / 2 + (3 / 5))),
 		Color3.fromRGB(42, 54, 73),
 		Enum.Material.Metal
 	)
@@ -129,7 +129,7 @@ function ReactorBuilder.Create(
 		header,
 		"ObjectiveGui",
 		`REACTOR RUN\nDeliver {requiredCells} Energy Cells\n{difficulty.TimeLimitSeconds}s`,
-		Vector3.new(0, 0, -0.7),
+		Vector3.new(0, 0, -(7 / 10)),
 		UDim2.fromOffset(420, 130)
 	)
 
@@ -139,8 +139,8 @@ function ReactorBuilder.Create(
 		local spawnPad = createPart(
 			model,
 			`PlayerSpawn{index}`,
-			Vector3.new(4, 0.3, 4),
-			CFrame.new(origin + Vector3.new(x, 0.16, definition.StartZ)),
+			Vector3.new(4, (3 / 10), 4),
+			CFrame.new(origin + Vector3.new(x, (4 / 25), definition.StartZ)),
 			Color3.fromRGB(66, 151, 214),
 			Enum.Material.Neon
 		)
@@ -165,8 +165,8 @@ function ReactorBuilder.Create(
 		local pedestal = createPart(
 			cellFolder,
 			`CellPedestal{index}`,
-			Vector3.new(4.5, 0.8, 4.5),
-			CFrame.new(origin + Vector3.new(x, 0.4, z)),
+			Vector3.new((9 / 2), (4 / 5), (9 / 2)),
+			CFrame.new(origin + Vector3.new(x, (2 / 5), z)),
 			Color3.fromRGB(48, 77, 89),
 			Enum.Material.Metal
 		)
@@ -175,7 +175,7 @@ function ReactorBuilder.Create(
 		local cell = createPart(
 			cellFolder,
 			cellId,
-			Vector3.new(2.2, 2.2, 2.2),
+			Vector3.new((11 / 5), (11 / 5), (11 / 5)),
 			CFrame.new(origin + Vector3.new(x, 2, z)),
 			Color3.fromRGB(79, 235, 255),
 			Enum.Material.Neon
@@ -220,8 +220,8 @@ function ReactorBuilder.Create(
 	local reactorCore = createPart(
 		model,
 		"ReactorCore",
-		Vector3.new(4, 4, 5.2),
-		CFrame.new(origin + Vector3.new(0, 3, definition.ReactorZ - 0.1)),
+		Vector3.new(4, 4, (26 / 5)),
+		CFrame.new(origin + Vector3.new(0, 3, definition.ReactorZ - (1 / 10))),
 		Color3.fromRGB(81, 255, 151),
 		Enum.Material.Neon
 	)
@@ -235,7 +235,7 @@ function ReactorBuilder.Create(
 	depositPrompt.MaxActivationDistance = BalanceConfig.Room.PromptMaxActivationDistance
 	depositPrompt.RequiresLineOfSight = false
 	depositPrompt.Parent = reactor
-	createBillboard(reactor, "ReactorGui", `REACTOR\n0 / {requiredCells} CELLS`, Vector3.new(0, 4.5, 0), UDim2.fromOffset(300, 90))
+	createBillboard(reactor, "ReactorGui", `REACTOR\n0 / {requiredCells} CELLS`, Vector3.new(0, (9 / 2), 0), UDim2.fromOffset(300, 90))
 
 	local hazardFolder = Instance.new("Folder")
 	hazardFolder.Name = "Hazards"
@@ -247,8 +247,8 @@ function ReactorBuilder.Create(
 		local hazard = createPart(
 			hazardFolder,
 			`Hazard{index}`,
-			Vector3.new(12, 5, 1.4),
-			CFrame.new(origin + Vector3.new(0, 2.5, z)),
+			Vector3.new(12, 5, (7 / 5)),
+			CFrame.new(origin + Vector3.new(0, (5 / 2), z)),
 			Color3.fromRGB(255, 64, 73),
 			Enum.Material.Neon
 		)
@@ -257,7 +257,7 @@ function ReactorBuilder.Create(
 		table.insert(hazards, {
 			Part = hazard,
 			BasePosition = hazard.Position,
-			Phase = (index - 1) * math.pi * 0.7,
+			Phase = (index - 1) * math.pi * (7 / 10),
 		})
 	end
 

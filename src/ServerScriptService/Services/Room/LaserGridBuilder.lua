@@ -35,14 +35,14 @@ function LaserGridBuilder.Create(
 	model:SetAttribute("RoomType", definition.Id)
 	BuilderUtil.CreateArena(model, definition, Color3.fromRGB(28, 32, 39))
 
-	local objectiveSign = BuilderUtil.CreatePart(model, "ObjectiveSign", Vector3.new(22, 5, 1), CFrame.new(origin + Vector3.new(0, 5, -definition.ArenaSize.Z / 2 + 0.6)), Color3.fromRGB(57, 43, 58), Enum.Material.Metal)
+	local objectiveSign = BuilderUtil.CreatePart(model, "ObjectiveSign", Vector3.new(22, 5, 1), CFrame.new(origin + Vector3.new(0, 5, -definition.ArenaSize.Z / 2 + (3 / 5))), Color3.fromRGB(57, 43, 58), Enum.Material.Metal)
 	objectiveSign.CanCollide = false
-	BuilderUtil.CreateBillboard(objectiveSign, "ObjectiveGui", `LASER GRID\nPlayers escaped 0 / {requiredFinishers}\n{difficulty.TimeLimitSeconds}s`, Vector3.new(0, 0, -0.7), UDim2.fromOffset(480, 130))
+	BuilderUtil.CreateBillboard(objectiveSign, "ObjectiveGui", `LASER GRID\nPlayers escaped 0 / {requiredFinishers}\n{difficulty.TimeLimitSeconds}s`, Vector3.new(0, 0, -(7 / 10)), UDim2.fromOffset(480, 130))
 
 	local spawnCFrames = {}
 	for index = 1, participantCount do
-		local x = BuilderUtil.EvenlySpacedX(index, participantCount, 4.5)
-		local pad = BuilderUtil.CreatePart(model, `PlayerSpawn{index}`, Vector3.new(4, 0.3, 4), CFrame.new(origin + Vector3.new(x, 0.16, definition.StartZ)), Color3.fromRGB(72, 170, 255), Enum.Material.Neon)
+		local x = BuilderUtil.EvenlySpacedX(index, participantCount, (9 / 2))
+		local pad = BuilderUtil.CreatePart(model, `PlayerSpawn{index}`, Vector3.new(4, (3 / 10), 4), CFrame.new(origin + Vector3.new(x, (4 / 25), definition.StartZ)), Color3.fromRGB(72, 170, 255), Enum.Material.Neon)
 		pad.CanCollide = false
 		table.insert(spawnCFrames, CFrame.new(origin + Vector3.new(x, 3, definition.StartZ)))
 	end
@@ -55,20 +55,20 @@ function LaserGridBuilder.Create(
 		local alpha = index / (difficulty.LaserCount + 1)
 		local z = definition.StartZ + (definition.ExitZ - definition.StartZ) * alpha
 		local vertical = index % 2 == 0
-		local size = if vertical then Vector3.new(1, 8, 2) else Vector3.new(definition.ArenaSize.X - 5, 0.8, 2)
-		local y = if vertical then 4 else 2 + (index % 3) * 1.5
+		local size = if vertical then Vector3.new(1, 8, 2) else Vector3.new(definition.ArenaSize.X - 5, (4 / 5), 2)
+		local y = if vertical then 4 else 2 + (index % 3) * (3 / 2)
 		local laser = BuilderUtil.CreatePart(laserFolder, `Laser{index}`, size, CFrame.new(origin + Vector3.new(0, y, z)), Color3.fromRGB(255, 48, 82), Enum.Material.Neon)
 		laser.CanCollide = false
 		laser:SetAttribute("HazardDamage", difficulty.LaserDamage)
 		local light = Instance.new("PointLight")
 		light.Color = laser.Color
-		light.Brightness = 1.5
+		light.Brightness = (3 / 2)
 		light.Range = 10
 		light.Parent = laser
-		table.insert(lasers, { Part = laser, BasePosition = laser.Position, Phase = (index - 1) * 0.9, Vertical = vertical })
+		table.insert(lasers, { Part = laser, BasePosition = laser.Position, Phase = (index - 1) * (9 / 10), Vertical = vertical })
 	end
 
-	local exit = BuilderUtil.CreatePart(model, "Exit", Vector3.new(14, 1, 7), CFrame.new(origin + Vector3.new(0, 0.5, definition.ExitZ)), Color3.fromRGB(84, 255, 148), Enum.Material.Neon)
+	local exit = BuilderUtil.CreatePart(model, "Exit", Vector3.new(14, 1, 7), CFrame.new(origin + Vector3.new(0, (1 / 2), definition.ExitZ)), Color3.fromRGB(84, 255, 148), Enum.Material.Neon)
 	local exitPrompt = Instance.new("ProximityPrompt")
 	exitPrompt.Name = "ExitPrompt"
 	exitPrompt.ActionText = "Escape"

@@ -41,7 +41,7 @@ function UIFactory.Stroke(instance: GuiObject, color: Color3?, thickness: number
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = color or Theme.Colors.SurfaceRaised
 	stroke.Thickness = thickness or 1
-	stroke.Transparency = 0.15
+	stroke.Transparency = (3 / 20)
 	stroke.Parent = instance
 end
 
@@ -87,7 +87,7 @@ end
 function UIFactory.Panel(parent: Instance, name: string, size: UDim2, position: UDim2): Frame
 	local panel = Instance.new("Frame")
 	panel.Name = name
-	panel.AnchorPoint = Vector2.new(0.5, 0.5)
+	panel.AnchorPoint = Vector2.new((1 / 2), (1 / 2))
 	panel.BackgroundColor3 = Theme.Colors.Surface
 	panel.Size = size
 	panel.Position = position
@@ -101,7 +101,7 @@ function UIFactory.Overlay(screen: ScreenGui): Frame
 	local overlay = Instance.new("Frame")
 	overlay.Name = "Overlay"
 	overlay.BackgroundColor3 = Color3.new(0, 0, 0)
-	overlay.BackgroundTransparency = 0.28
+	overlay.BackgroundTransparency = (7 / 25)
 	overlay.Size = UDim2.fromScale(1, 1)
 	overlay.Active = true
 	overlay.Parent = screen
@@ -109,7 +109,7 @@ function UIFactory.Overlay(screen: ScreenGui): Frame
 end
 
 function UIFactory.FormatNumber(value: number): string
-	local rounded = math.floor(value + 0.5)
+	local rounded = math.floor(value + (1 / 2))
 	local text = tostring(rounded)
 	while true do
 		local replaced, count = string.gsub(text, "^(-?%d+)(%d%d%d)", "%1,%2")

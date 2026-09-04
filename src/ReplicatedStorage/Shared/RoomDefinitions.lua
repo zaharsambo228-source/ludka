@@ -22,7 +22,7 @@ local RoomDefinitions = {
 		HazardTravelX = 27,
 		PickupHoldDuration = BalanceConfig.Room.ReactorPickupHoldDuration,
 		DepositHoldDuration = BalanceConfig.Room.ReactorDepositHoldDuration,
-		CarryOffset = CFrame.new(1.8, 0.4, -1.8),
+		CarryOffset = CFrame.new((9 / 5), (2 / 5), -(9 / 5)),
 	}),
 	SignalSequence = table.freeze({
 		Id = "SignalSequence",

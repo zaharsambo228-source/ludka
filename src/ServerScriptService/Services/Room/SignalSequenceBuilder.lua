@@ -44,18 +44,18 @@ function SignalSequenceBuilder.Create(
 	model:SetAttribute("RoomType", definition.Id)
 	BuilderUtil.CreateArena(model, definition, Color3.fromRGB(31, 38, 58))
 
-	local objectiveSign = BuilderUtil.CreatePart(model, "ObjectiveSign", Vector3.new(22, 5, 1), CFrame.new(origin + Vector3.new(0, 5, -definition.ArenaSize.Z / 2 + 0.6)), Color3.fromRGB(45, 53, 78), Enum.Material.Metal)
+	local objectiveSign = BuilderUtil.CreatePart(model, "ObjectiveSign", Vector3.new(22, 5, 1), CFrame.new(origin + Vector3.new(0, 5, -definition.ArenaSize.Z / 2 + (3 / 5))), Color3.fromRGB(45, 53, 78), Enum.Material.Metal)
 	objectiveSign.CanCollide = false
-	BuilderUtil.CreateBillboard(objectiveSign, "ObjectiveGui", `SIGNAL SEQUENCE\nMemorize {difficulty.SequenceLength} signals\n{difficulty.TimeLimitSeconds}s`, Vector3.new(0, 0, -0.7), UDim2.fromOffset(480, 130))
+	BuilderUtil.CreateBillboard(objectiveSign, "ObjectiveGui", `SIGNAL SEQUENCE\nMemorize {difficulty.SequenceLength} signals\n{difficulty.TimeLimitSeconds}s`, Vector3.new(0, 0, -(7 / 10)), UDim2.fromOffset(480, 130))
 
 	local sequenceBoard = BuilderUtil.CreatePart(model, "SequenceBoard", Vector3.new(26, 7, 1), CFrame.new(origin + Vector3.new(0, 5, 2)), Color3.fromRGB(19, 23, 35), Enum.Material.SmoothPlastic)
 	sequenceBoard.CanCollide = false
-	BuilderUtil.CreateBillboard(sequenceBoard, "SequenceGui", "GET READY", Vector3.new(0, 0, -0.7), UDim2.fromOffset(620, 180))
+	BuilderUtil.CreateBillboard(sequenceBoard, "SequenceGui", "GET READY", Vector3.new(0, 0, -(7 / 10)), UDim2.fromOffset(620, 180))
 
 	local spawnCFrames = {}
 	for index = 1, participantCount do
 		local x = BuilderUtil.EvenlySpacedX(index, participantCount, 5)
-		local pad = BuilderUtil.CreatePart(model, `PlayerSpawn{index}`, Vector3.new(4, 0.3, 4), CFrame.new(origin + Vector3.new(x, 0.16, definition.StartZ)), Color3.fromRGB(98, 113, 211), Enum.Material.Neon)
+		local pad = BuilderUtil.CreatePart(model, `PlayerSpawn{index}`, Vector3.new(4, (3 / 10), 4), CFrame.new(origin + Vector3.new(x, (4 / 25), definition.StartZ)), Color3.fromRGB(98, 113, 211), Enum.Material.Neon)
 		pad.CanCollide = false
 		table.insert(spawnCFrames, CFrame.new(origin + Vector3.new(x, 3, definition.StartZ)))
 	end
@@ -64,7 +64,7 @@ function SignalSequenceBuilder.Create(
 	for index = 1, difficulty.PanelCount do
 		local panelId = `Signal{index}`
 		local x = BuilderUtil.EvenlySpacedX(index, difficulty.PanelCount, definition.PanelSpacing)
-		local panel = BuilderUtil.CreatePart(model, panelId, Vector3.new(5, 5, 2), CFrame.new(origin + Vector3.new(x, 2.5, definition.PanelZ)), PANEL_COLORS[index], Enum.Material.Neon)
+		local panel = BuilderUtil.CreatePart(model, panelId, Vector3.new(5, 5, 2), CFrame.new(origin + Vector3.new(x, (5 / 2), definition.PanelZ)), PANEL_COLORS[index], Enum.Material.Neon)
 		panel:SetAttribute("PanelId", panelId)
 		local prompt = Instance.new("ProximityPrompt")
 		prompt.Name = "ActivatePrompt"
@@ -75,7 +75,7 @@ function SignalSequenceBuilder.Create(
 		prompt.RequiresLineOfSight = false
 		prompt.Enabled = false
 		prompt.Parent = panel
-		BuilderUtil.CreateBillboard(panel, "PanelGui", tostring(index), Vector3.new(0, 3.5, 0), UDim2.fromOffset(90, 90))
+		BuilderUtil.CreateBillboard(panel, "PanelGui", tostring(index), Vector3.new(0, (7 / 2), 0), UDim2.fromOffset(90, 90))
 		panels[panelId] = { Id = panelId, Index = index, Part = panel, Prompt = prompt }
 	end
 

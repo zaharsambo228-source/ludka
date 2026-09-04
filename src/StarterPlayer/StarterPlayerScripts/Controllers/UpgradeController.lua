@@ -127,7 +127,7 @@ function UpgradeController.Init(context: any)
 	upgradeRemote = context.Remotes:FindFirstChild("UpgradeAction") :: RemoteEvent
 	screen = UIFactory.GetScreen("UpgradeUI", 20)
 	UIFactory.Overlay(screen :: ScreenGui)
-	local panel = UIFactory.Panel(screen :: ScreenGui, "UpgradePanel", UDim2.new(0.94, 0, 0.84, 0), UDim2.fromScale(0.5, 0.5))
+	local panel = UIFactory.Panel(screen :: ScreenGui, "UpgradePanel", UDim2.new((47 / 50), 0, (21 / 25), 0), UDim2.fromScale((1 / 2), (1 / 2)))
 	local constraint = Instance.new("UISizeConstraint")
 	constraint.MinSize = Vector2.new(320, 300)
 	constraint.MaxSize = Vector2.new(760, 700)

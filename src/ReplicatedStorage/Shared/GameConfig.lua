@@ -17,7 +17,7 @@ local GameConfig = {
 		ReleaseRetryDelaySeconds = 1,
 		MaxOperationReceipts = 128,
 		OperationWaitTimeoutSeconds = 10,
-		OperationPollSeconds = 0.05,
+		OperationPollSeconds = (1 / 20),
 	}),
 	Farm = table.freeze({
 		MaxPlots = 6,
@@ -40,20 +40,20 @@ local GameConfig = {
 		TowerFoundationSize = Vector3.new(104, 4, 104),
 		TowerApproachLength = 142,
 		TowerGateDistance = 14,
-		TowerGateHoldSeconds = 0.35,
+		TowerGateHoldSeconds = (7 / 20),
 	}),
 	Run = table.freeze({
 		MinPlayers = 1,
 		MaxPlayers = 6,
-		ClientActionCooldownSeconds = 0.25,
+		ClientActionCooldownSeconds = (1 / 4),
 	}),
 	Room = table.freeze({
-		ClientActionCooldownSeconds = 0.12,
+		ClientActionCooldownSeconds = (3 / 25),
 		MaxInteractionDistance = 12,
 		HazardHitCooldownSeconds = 1,
 	}),
 	Reward = table.freeze({
-		ClientActionCooldownSeconds = 0.25,
+		ClientActionCooldownSeconds = (1 / 4),
 		MaxClaimReceipts = 64,
 		MaxDustReceipts = 64,
 	}),

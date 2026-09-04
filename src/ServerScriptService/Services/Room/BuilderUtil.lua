@@ -44,7 +44,7 @@ function BuilderUtil.CreateBillboard(adornee: BasePart, name: string, text: stri
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.TextScaled = true
 	label.TextStrokeColor3 = Color3.new(0, 0, 0)
-	label.TextStrokeTransparency = 0.3
+	label.TextStrokeTransparency = (3 / 10)
 	label.Parent = billboard
 end
 
@@ -55,12 +55,12 @@ end
 function BuilderUtil.CreateArena(model: Model, definition: any, floorColor: Color3): Part
 	local origin = definition.ArenaOrigin
 	local size = definition.ArenaSize
-	local floor = BuilderUtil.CreatePart(model, "Floor", size, CFrame.new(origin + Vector3.new(0, -0.5, 0)), floorColor, Enum.Material.Metal)
+	local floor = BuilderUtil.CreatePart(model, "Floor", size, CFrame.new(origin + Vector3.new(0, -(1 / 2), 0)), floorColor, Enum.Material.Metal)
 	model.PrimaryPart = floor
-	BuilderUtil.CreatePart(model, "LeftWall", Vector3.new(1, 9, size.Z), CFrame.new(origin + Vector3.new(-size.X / 2, 4.5, 0)), Color3.fromRGB(25, 31, 42), Enum.Material.Metal)
-	BuilderUtil.CreatePart(model, "RightWall", Vector3.new(1, 9, size.Z), CFrame.new(origin + Vector3.new(size.X / 2, 4.5, 0)), Color3.fromRGB(25, 31, 42), Enum.Material.Metal)
-	BuilderUtil.CreatePart(model, "BackWall", Vector3.new(size.X, 9, 1), CFrame.new(origin + Vector3.new(0, 4.5, -size.Z / 2)), Color3.fromRGB(25, 31, 42), Enum.Material.Metal)
-	BuilderUtil.CreatePart(model, "FrontWall", Vector3.new(size.X, 9, 1), CFrame.new(origin + Vector3.new(0, 4.5, size.Z / 2)), Color3.fromRGB(25, 31, 42), Enum.Material.Metal)
+	BuilderUtil.CreatePart(model, "LeftWall", Vector3.new(1, 9, size.Z), CFrame.new(origin + Vector3.new(-size.X / 2, (9 / 2), 0)), Color3.fromRGB(25, 31, 42), Enum.Material.Metal)
+	BuilderUtil.CreatePart(model, "RightWall", Vector3.new(1, 9, size.Z), CFrame.new(origin + Vector3.new(size.X / 2, (9 / 2), 0)), Color3.fromRGB(25, 31, 42), Enum.Material.Metal)
+	BuilderUtil.CreatePart(model, "BackWall", Vector3.new(size.X, 9, 1), CFrame.new(origin + Vector3.new(0, (9 / 2), -size.Z / 2)), Color3.fromRGB(25, 31, 42), Enum.Material.Metal)
+	BuilderUtil.CreatePart(model, "FrontWall", Vector3.new(size.X, 9, 1), CFrame.new(origin + Vector3.new(0, (9 / 2), size.Z / 2)), Color3.fromRGB(25, 31, 42), Enum.Material.Metal)
 	return floor
 end
 

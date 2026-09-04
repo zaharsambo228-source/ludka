@@ -142,7 +142,7 @@ function FarmController.Init(context: any)
 	farmRemote = context.Remotes:FindFirstChild("FarmAction") :: RemoteEvent
 	screen = UIFactory.GetScreen("FarmUI", 20)
 	UIFactory.Overlay(screen :: ScreenGui)
-	local panel = UIFactory.Panel(screen :: ScreenGui, "FarmPanel", UDim2.new(0.94, 0, 0.84, 0), UDim2.fromScale(0.5, 0.5))
+	local panel = UIFactory.Panel(screen :: ScreenGui, "FarmPanel", UDim2.new((47 / 50), 0, (21 / 25), 0), UDim2.fromScale((1 / 2), (1 / 2)))
 	local constraint = Instance.new("UISizeConstraint")
 	constraint.MinSize = Vector2.new(320, 300)
 	constraint.MaxSize = Vector2.new(850, 700)

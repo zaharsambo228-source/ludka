@@ -399,7 +399,7 @@ local function startRoomHeartbeat(session: RoomSession, definition: any, difficu
 				local basePosition = laserData.BasePosition
 				laserData.Part.Position = if laserData.Vertical
 					then Vector3.new(basePosition.X + offset, basePosition.Y, basePosition.Z)
-					else Vector3.new(basePosition.X, math.max(1, basePosition.Y + offset * 0.25), basePosition.Z)
+					else Vector3.new(basePosition.X, math.max(1, basePosition.Y + offset * (1 / 4)), basePosition.Z)
 			end
 		end
 

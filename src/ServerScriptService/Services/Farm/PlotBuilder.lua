@@ -48,7 +48,7 @@ local function createBillboard(
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.TextScaled = true
 	label.TextStrokeColor3 = Color3.new(0, 0, 0)
-	label.TextStrokeTransparency = 0.35
+	label.TextStrokeTransparency = (7 / 20)
 	label.Parent = billboard
 
 	return label
@@ -57,7 +57,7 @@ end
 local function slotOffset(slotIndex: number): Vector3
 	local column = (slotIndex - 1) % 3
 	local row = math.floor((slotIndex - 1) / 3)
-	return Vector3.new((column - 1) * 13, 0.4, -6 + row * 12)
+	return Vector3.new((column - 1) * 13, (2 / 5), -6 + row * 12)
 end
 
 local function createSlot(plot: Model, ownerUserId: number, slotIndex: number, origin: Vector3)
@@ -72,7 +72,7 @@ local function createSlot(plot: Model, ownerUserId: number, slotIndex: number, o
 	pad.Anchored = true
 	pad.CanCollide = true
 	pad.Material = Enum.Material.SmoothPlastic
-	pad.Size = Vector3.new(8, 0.8, 8)
+	pad.Size = Vector3.new(8, (4 / 5), 8)
 	pad.Position = origin + slotOffset(slotIndex)
 	pad.TopSurface = Enum.SurfaceType.Smooth
 	pad.BottomSurface = Enum.SurfaceType.Smooth
@@ -82,7 +82,7 @@ local function createSlot(plot: Model, ownerUserId: number, slotIndex: number, o
 		pad,
 		"StatusGui",
 		`SLOT {slotIndex}`,
-		Vector3.new(0, 1.2, 0),
+		Vector3.new(0, (6 / 5), 0),
 		UDim2.fromOffset(170, 48)
 	)
 end
@@ -106,7 +106,7 @@ function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number,
 	base.Color = Color3.fromRGB(56, 80, 58)
 	base.Material = Enum.Material.Grass
 	base.Size = config.PlotSize
-	base.Position = origin + Vector3.new(0, -0.5, 0)
+	base.Position = origin + Vector3.new(0, -(1 / 2), 0)
 	base.TopSurface = Enum.SurfaceType.Smooth
 	base.BottomSurface = Enum.SurfaceType.Smooth
 	base.Parent = plot
@@ -182,7 +182,7 @@ function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number,
 			upgradeTerminal,
 			"UpgradeGui",
 			"UPGRADE LOADING...",
-			Vector3.new(0, 3.5, 0),
+			Vector3.new(0, (7 / 2), 0),
 			UDim2.fromOffset(280, 100)
 		)
 	end
@@ -282,20 +282,20 @@ function PlotBuilder.ShowCollectFeedback(plot: Model, amount: number)
 	label.Text = `+{amount} Coins`
 	label.TextColor3 = Color3.fromRGB(255, 226, 71)
 	label.TextScaled = true
-	label.TextStrokeTransparency = 0.25
+	label.TextStrokeTransparency = (1 / 4)
 	label.Parent = billboard
 
 	TweenService:Create(
 		billboard,
-		TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		TweenInfo.new((7 / 5), Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 		{ StudsOffsetWorldSpace = Vector3.new(0, 7, 0) }
 	):Play()
 	TweenService:Create(
 		label,
-		TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+		TweenInfo.new((7 / 5), Enum.EasingStyle.Quad, Enum.EasingDirection.In),
 		{ TextTransparency = 1, TextStrokeTransparency = 1 }
 	):Play()
-	Debris:AddItem(billboard, 1.5)
+	Debris:AddItem(billboard, (3 / 2))
 end
 
 
@@ -320,8 +320,8 @@ local function createDisplayModel(
 	body.Color = RARITY_COLORS[definition.Rarity] or Color3.new(1, 1, 1)
 	body.Material = Enum.Material.SmoothPlastic
 	body.Shape = Enum.PartType.Ball
-	body.Size = Vector3.new(3.4, 3.4, 3.4)
-	body.CFrame = pad.CFrame * CFrame.new(0, 2.2, 0)
+	body.Size = Vector3.new((17 / 5), (17 / 5), (17 / 5))
+	body.CFrame = pad.CFrame * CFrame.new(0, (11 / 5), 0)
 	body.Parent = display
 	display.PrimaryPart = body
 
@@ -329,7 +329,7 @@ local function createDisplayModel(
 		body,
 		"BrainrotGui",
 		`{definition.DisplayName}\n{string.upper(definition.Rarity)}\n+{definition.BaseProductionPerMinute} Coins/min`,
-		Vector3.new(0, 2.8, 0),
+		Vector3.new(0, (14 / 5), 0),
 		UDim2.fromOffset(250, 100)
 	)
 

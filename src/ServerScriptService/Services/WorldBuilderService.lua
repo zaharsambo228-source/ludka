@@ -68,7 +68,7 @@ local function createBillboard(part: BasePart, name: string, text: string, offse
 	label.TextColor3 = color or Color3.new(1, 1, 1)
 	label.TextScaled = true
 	label.TextStrokeColor3 = Color3.new(0, 0, 0)
-	label.TextStrokeTransparency = 0.2
+	label.TextStrokeTransparency = (1 / 5)
 	label.Parent = billboard
 	return label
 end
@@ -77,13 +77,13 @@ local function createPlotOutline(parent: Instance, plotIndex: number)
 	local origin = WorldGeometry.GetFarmPlotOrigin(plotIndex)
 	local size = GameConfig.Farm.PlotSize
 	local color = Color3.fromRGB(84, 255, 161)
-	local beamHeight = 0.45
-	local reservation = createPart(parent, `Plot{plotIndex}Reservation`, Vector3.new(size.X, 0.5, size.Z), CFrame.new(origin + Vector3.new(0, -0.75, 0)), Color3.fromRGB(48, 91, 57), Enum.Material.Grass)
+	local beamHeight = (9 / 20)
+	local reservation = createPart(parent, `Plot{plotIndex}Reservation`, Vector3.new(size.X, (1 / 2), size.Z), CFrame.new(origin + Vector3.new(0, -(3 / 4), 0)), Color3.fromRGB(48, 91, 57), Enum.Material.Grass)
 	reservation:SetAttribute("PlotIndex", plotIndex)
-	createPart(parent, `Plot{plotIndex}North`, Vector3.new(size.X, beamHeight, 0.6), CFrame.new(origin + Vector3.new(0, 0.22, -size.Z / 2)), color, Enum.Material.Neon).CanCollide = false
-	createPart(parent, `Plot{plotIndex}South`, Vector3.new(size.X, beamHeight, 0.6), CFrame.new(origin + Vector3.new(0, 0.22, size.Z / 2)), color, Enum.Material.Neon).CanCollide = false
-	createPart(parent, `Plot{plotIndex}West`, Vector3.new(0.6, beamHeight, size.Z), CFrame.new(origin + Vector3.new(-size.X / 2, 0.22, 0)), color, Enum.Material.Neon).CanCollide = false
-	createPart(parent, `Plot{plotIndex}East`, Vector3.new(0.6, beamHeight, size.Z), CFrame.new(origin + Vector3.new(size.X / 2, 0.22, 0)), color, Enum.Material.Neon).CanCollide = false
+	createPart(parent, `Plot{plotIndex}North`, Vector3.new(size.X, beamHeight, (3 / 5)), CFrame.new(origin + Vector3.new(0, (11 / 50), -size.Z / 2)), color, Enum.Material.Neon).CanCollide = false
+	createPart(parent, `Plot{plotIndex}South`, Vector3.new(size.X, beamHeight, (3 / 5)), CFrame.new(origin + Vector3.new(0, (11 / 50), size.Z / 2)), color, Enum.Material.Neon).CanCollide = false
+	createPart(parent, `Plot{plotIndex}West`, Vector3.new((3 / 5), beamHeight, size.Z), CFrame.new(origin + Vector3.new(-size.X / 2, (11 / 50), 0)), color, Enum.Material.Neon).CanCollide = false
+	createPart(parent, `Plot{plotIndex}East`, Vector3.new((3 / 5), beamHeight, size.Z), CFrame.new(origin + Vector3.new(size.X / 2, (11 / 50), 0)), color, Enum.Material.Neon).CanCollide = false
 	local marker = createPart(parent, `Plot{plotIndex}Marker`, Vector3.new(5, 4, 1), CFrame.new(origin + Vector3.new(0, 2, size.Z / 2 - 1)), Color3.fromRGB(33, 48, 57), Enum.Material.Metal)
 	marker.CanCollide = false
 	createBillboard(marker, "PlotNumber", `FARM PLOT {plotIndex}`, Vector3.new(0, 3, 0), color)
@@ -93,7 +93,7 @@ local function buildLobby(parent: Instance): ProximityPrompt
 	local world = GameConfig.World
 	local lobbyOrigin = world.LobbyOrigin
 	createPart(parent, "LobbyIsland", world.LobbySize, CFrame.new(lobbyOrigin + Vector3.new(0, -world.LobbySize.Y / 2, 0)), Color3.fromRGB(38, 55, 66), Enum.Material.Slate)
-	local center = createPart(parent, "LobbyCenter", Vector3.new(74, 1, 54), CFrame.new(lobbyOrigin + Vector3.new(0, 0.5, 0)), Color3.fromRGB(57, 78, 91), Enum.Material.SmoothPlastic)
+	local center = createPart(parent, "LobbyCenter", Vector3.new(74, 1, 54), CFrame.new(lobbyOrigin + Vector3.new(0, (1 / 2), 0)), Color3.fromRGB(57, 78, 91), Enum.Material.SmoothPlastic)
 	createBillboard(center, "WelcomeSign", "BRAINROT TOWER\nCLAIM SAFE • UPGRADE FOR BETTER RARITY", Vector3.new(0, 12, 0), Color3.fromRGB(255, 230, 119))
 
 	local spawn = Instance.new("SpawnLocation")
@@ -106,7 +106,7 @@ local function buildLobby(parent: Instance): ProximityPrompt
 	spawn.CFrame = world.LobbySpawn
 	spawn.Color = Color3.fromRGB(79, 218, 255)
 	spawn.Material = Enum.Material.Neon
-	spawn.Transparency = 0.18
+	spawn.Transparency = (9 / 50)
 	spawn.Parent = parent
 
 	for index, rarity in BalanceConfig.Run.RarityByStage do
@@ -118,7 +118,7 @@ local function buildLobby(parent: Instance): ProximityPrompt
 	end
 
 	local approachCenterZ = world.TowerOrigin.Z - world.TowerApproachLength / 2
-	createPart(parent, "TowerApproach", Vector3.new(26, 1, world.TowerApproachLength), CFrame.new(0, -0.5, approachCenterZ), Color3.fromRGB(47, 53, 70), Enum.Material.Cobblestone)
+	createPart(parent, "TowerApproach", Vector3.new(26, 1, world.TowerApproachLength), CFrame.new(0, -(1 / 2), approachCenterZ), Color3.fromRGB(47, 53, 70), Enum.Material.Cobblestone)
 	for side = -1, 1, 2 do
 		createPart(parent, if side == -1 then "ApproachRailLeft" else "ApproachRailRight", Vector3.new(1, 3, world.TowerApproachLength), CFrame.new(side * 13, 1, approachCenterZ), Color3.fromRGB(86, 73, 125), Enum.Material.Neon).CanCollide = true
 	end
@@ -141,7 +141,7 @@ local function buildFarmDistrict(parent: Instance)
 	local world = GameConfig.World
 	createPart(parent, "FarmDistrictGround", world.FarmDistrictSize, CFrame.new(world.FarmDistrictOrigin), Color3.fromRGB(42, 78, 48), Enum.Material.Grass)
 	local roadZ = GameConfig.Farm.DistrictOrigin.Z + GameConfig.Farm.PlotSpacingZ / 2
-	createPart(parent, "FarmRoad", Vector3.new(world.FarmDistrictSize.X - 12, 0.5, 7), CFrame.new(0, -0.75, roadZ), Color3.fromRGB(66, 71, 78), Enum.Material.Cobblestone)
+	createPart(parent, "FarmRoad", Vector3.new(world.FarmDistrictSize.X - 12, (1 / 2), 7), CFrame.new(0, -(3 / 4), roadZ), Color3.fromRGB(66, 71, 78), Enum.Material.Cobblestone)
 	for plotIndex = 1, GameConfig.Farm.MaxPlots do createPlotOutline(parent, plotIndex) end
 	local sign = createPart(parent, "FarmDistrictSign", Vector3.new(20, 8, 2), CFrame.new(0, 4, -24), Color3.fromRGB(48, 67, 52), Enum.Material.Wood)
 	createBillboard(sign, "FarmTitle", "FARM DISTRICT\n6 PHYSICAL PLOTS • 6 SLOTS EACH", Vector3.new(0, 6, 0), Color3.fromRGB(126, 255, 164))
@@ -157,8 +157,8 @@ local function buildTower(parent: Instance)
 		foundation:SetAttribute("Tier", tier)
 		foundation:SetAttribute("Rarity", rarity)
 		for side = -1, 1, 2 do
-			createPart(parent, `Stage{tier}BandX{side}`, Vector3.new(world.TowerFoundationSize.X, 1, 1), CFrame.new(origin + Vector3.new(0, 0.5, side * world.TowerFoundationSize.Z / 2)), color, Enum.Material.Neon).CanCollide = false
-			createPart(parent, `Stage{tier}BandZ{side}`, Vector3.new(1, 1, world.TowerFoundationSize.Z), CFrame.new(origin + Vector3.new(side * world.TowerFoundationSize.X / 2, 0.5, 0)), color, Enum.Material.Neon).CanCollide = false
+			createPart(parent, `Stage{tier}BandX{side}`, Vector3.new(world.TowerFoundationSize.X, 1, 1), CFrame.new(origin + Vector3.new(0, (1 / 2), side * world.TowerFoundationSize.Z / 2)), color, Enum.Material.Neon).CanCollide = false
+			createPart(parent, `Stage{tier}BandZ{side}`, Vector3.new(1, 1, world.TowerFoundationSize.Z), CFrame.new(origin + Vector3.new(side * world.TowerFoundationSize.X / 2, (1 / 2), 0)), color, Enum.Material.Neon).CanCollide = false
 		end
 		local stageSign = createPart(parent, `Stage{tier}Sign`, Vector3.new(24, 7, 2), CFrame.new(origin + Vector3.new(0, 8, -world.TowerFoundationSize.Z / 2 + 1)), Color3.fromRGB(31, 35, 49), Enum.Material.Metal)
 		stageSign.CanCollide = false

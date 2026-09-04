@@ -1,3 +1,4 @@
 .DS_Store
 *.rbxlx
+*.rbxlx.lock
 *.rbxl

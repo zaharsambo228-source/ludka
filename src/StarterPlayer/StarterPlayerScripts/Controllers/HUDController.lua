@@ -26,11 +26,11 @@ local toastVersion = 0
 local HUDController = { Name = "HUDController" }
 
 local function makePill(parent: Instance, order: number, text: string, color: Color3): TextLabel
-	local label = UIFactory.Text(parent, text, UDim2.new(0.225, 0, 0, 42), nil, 14, color)
+	local label = UIFactory.Text(parent, text, UDim2.new((9 / 40), 0, 0, 42), nil, 14, color)
 	label.Name = `Pill{order}`
 	label.LayoutOrder = order
 	label.BackgroundColor3 = Theme.Colors.Surface
-	label.BackgroundTransparency = 0.08
+	label.BackgroundTransparency = (2 / 25)
 	label.TextXAlignment = Enum.TextXAlignment.Center
 	UIFactory.Round(label, 12)
 	UIFactory.Stroke(label, color, 1)
@@ -88,8 +88,8 @@ function HUDController.Init(context: any)
 	runAction = context.Remotes:FindFirstChild("RunAction") :: RemoteEvent
 	local screen = UIFactory.GetScreen("MainHUD", 10)
 	local topBar = Instance.new("Frame")
-	topBar.AnchorPoint = Vector2.new(0.5, 0)
-	topBar.Position = UDim2.new(0.5, 0, 0, 10)
+	topBar.AnchorPoint = Vector2.new((1 / 2), 0)
+	topBar.Position = UDim2.new((1 / 2), 0, 0, 10)
 	topBar.Size = UDim2.new(1, -24, 0, 44)
 	topBar.BackgroundTransparency = 1
 	topBar.Parent = screen
@@ -103,8 +103,8 @@ function HUDController.Init(context: any)
 	collectionLabel = makePill(topBar, 3, "Index 0/0", Theme.Colors.Accent)
 	productionLabel = makePill(topBar, 4, "Farm loading…", Theme.Colors.Safe)
 
-	runPanel = UIFactory.Panel(screen, "RunHUD", UDim2.new(0.92, 0, 0, 118), UDim2.new(0.5, 0, 0, 112))
-	(runPanel :: Frame).AnchorPoint = Vector2.new(0.5, 0)
+	runPanel = UIFactory.Panel(screen, "RunHUD", UDim2.new((23 / 25), 0, 0, 118), UDim2.new((1 / 2), 0, 0, 112))
+	(runPanel :: Frame).AnchorPoint = Vector2.new((1 / 2), 0)
 	local runConstraint = Instance.new("UISizeConstraint")
 	runConstraint.MinSize = Vector2.new(300, 118)
 	runConstraint.MaxSize = Vector2.new(470, 118)
@@ -118,8 +118,8 @@ function HUDController.Init(context: any)
 	(progressLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
 
 	local nav = Instance.new("Frame")
-	nav.AnchorPoint = Vector2.new(0.5, 1)
-	nav.Position = UDim2.new(0.5, 0, 1, -14)
+	nav.AnchorPoint = Vector2.new((1 / 2), 1)
+	nav.Position = UDim2.new((1 / 2), 0, 1, -14)
 	nav.Size = UDim2.new(1, -24, 0, 66)
 	nav.BackgroundTransparency = 1
 	nav.Parent = screen
@@ -134,25 +134,25 @@ function HUDController.Init(context: any)
 		{ Label = "UPGRADES", Panel = "Upgrades", Color = Theme.Colors.Dust },
 	}
 	for _, data in navigationButtons do
-		local button = UIFactory.Button(nav, data.Label, UDim2.new(0.22, 0, 0, 62), data.Color)
+		local button = UIFactory.Button(nav, data.Label, UDim2.new((11 / 50), 0, 0, 62), data.Color)
 		button.TextSize = 14
 		button.Activated:Connect(function() store.SetOpenPanel(data.Panel) end)
 	end
-	towerButton = UIFactory.Button(nav, "START TOWER", UDim2.new(0.22, 0, 0, 62), Theme.Colors.Risk)
+	towerButton = UIFactory.Button(nav, "START TOWER", UDim2.new((11 / 50), 0, 0, 62), Theme.Colors.Risk)
 	(towerButton :: TextButton).TextSize = 14
 	(towerButton :: TextButton).Activated:Connect(function()
 		store.SetOpenPanel(nil)
 		(runAction :: RemoteEvent):FireServer({ Action = "RequestStart" })
 	end)
 
-	toastLabel = UIFactory.Text(screen, "", UDim2.new(0.9, 0, 0, 48), UDim2.new(0.5, 0, 1, -148), 17)
-	(toastLabel :: TextLabel).AnchorPoint = Vector2.new(0.5, 0)
+	toastLabel = UIFactory.Text(screen, "", UDim2.new((9 / 10), 0, 0, 48), UDim2.new((1 / 2), 0, 1, -148), 17)
+	(toastLabel :: TextLabel).AnchorPoint = Vector2.new((1 / 2), 0)
 	local toastConstraint = Instance.new("UISizeConstraint")
 	toastConstraint.MaxSize = Vector2.new(520, 48)
 	toastConstraint.MinSize = Vector2.new(280, 48)
 	toastConstraint.Parent = toastLabel
 	(toastLabel :: TextLabel).BackgroundColor3 = Theme.Colors.Surface
-	(toastLabel :: TextLabel).BackgroundTransparency = 0.06
+	(toastLabel :: TextLabel).BackgroundTransparency = (3 / 50)
 	(toastLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
 	(toastLabel :: TextLabel).Visible = false
 	UIFactory.Round(toastLabel :: TextLabel, 12)

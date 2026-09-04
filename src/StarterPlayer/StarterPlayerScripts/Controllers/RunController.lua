@@ -132,7 +132,7 @@ function RunController.Init(context: any)
 	decisionRemote = context.Remotes:FindFirstChild("DecisionVote") :: RemoteEvent
 	revealScreen = UIFactory.GetScreen("RewardRevealUI", 30)
 	UIFactory.Overlay(revealScreen :: ScreenGui)
-	revealCard = UIFactory.Panel(revealScreen :: ScreenGui, "RewardCard", UDim2.new(0.9, 0, 0.46, 0), UDim2.fromScale(0.5, 0.48))
+	revealCard = UIFactory.Panel(revealScreen :: ScreenGui, "RewardCard", UDim2.new((9 / 10), 0, (23 / 50), 0), UDim2.fromScale((1 / 2), (12 / 25)))
 	addSizeConstraint(revealCard :: Frame, 560, 300)
 	revealStatus = UIFactory.Text(revealCard :: Frame, "CURRENT PENDING REWARD", UDim2.new(1, -40, 0, 30), UDim2.fromOffset(20, 16), 17, Theme.Colors.Muted)
 	(revealStatus :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
@@ -148,7 +148,7 @@ function RunController.Init(context: any)
 
 	decisionScreen = UIFactory.GetScreen("DecisionUI", 31)
 	UIFactory.Overlay(decisionScreen :: ScreenGui)
-	decisionCard = UIFactory.Panel(decisionScreen :: ScreenGui, "DecisionCard", UDim2.new(0.94, 0, 0, 430), UDim2.fromScale(0.5, 0.5))
+	decisionCard = UIFactory.Panel(decisionScreen :: ScreenGui, "DecisionCard", UDim2.new((47 / 50), 0, 0, 430), UDim2.fromScale((1 / 2), (1 / 2)))
 	addSizeConstraint(decisionCard :: Frame, 720, 460)
 	decisionScale = Instance.new("UIScale")
 	decisionScale.Parent = decisionCard
@@ -170,7 +170,7 @@ function RunController.Init(context: any)
 
 	failureScreen = UIFactory.GetScreen("FailureUI", 40)
 	UIFactory.Overlay(failureScreen :: ScreenGui)
-	failureCard = UIFactory.Panel(failureScreen :: ScreenGui, "FailureCard", UDim2.new(0.9, 0, 0.46, 0), UDim2.fromScale(0.5, 0.5))
+	failureCard = UIFactory.Panel(failureScreen :: ScreenGui, "FailureCard", UDim2.new((9 / 10), 0, (23 / 50), 0), UDim2.fromScale((1 / 2), (1 / 2)))
 	addSizeConstraint(failureCard :: Frame, 560, 300)
 	failureTitle = UIFactory.Text(failureCard :: Frame, "PENDING REWARD LOST", UDim2.new(1, -40, 0, 48), UDim2.fromOffset(20, 24), 26, Theme.Colors.Risk)
 	(failureTitle :: TextLabel).Font = Enum.Font.GothamBold
@@ -190,7 +190,7 @@ function RunController.Start()
 		end
 		local camera = Workspace.CurrentCamera
 		if decisionScale ~= nil and camera ~= nil then
-			decisionScale.Scale = math.clamp((camera.ViewportSize.Y - 24) / 430, 0.65, 1)
+			decisionScale.Scale = math.clamp((camera.ViewportSize.Y - 24) / 430, (13 / 20), 1)
 		end
 	end)
 end

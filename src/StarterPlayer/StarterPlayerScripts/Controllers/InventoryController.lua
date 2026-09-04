@@ -110,7 +110,7 @@ function InventoryController.Init(context: any)
 	store = context.Store
 	screen = UIFactory.GetScreen("InventoryUI", 20)
 	UIFactory.Overlay(screen :: ScreenGui)
-	local panel = UIFactory.Panel(screen :: ScreenGui, "InventoryPanel", UDim2.new(0.94, 0, 0.84, 0), UDim2.fromScale(0.5, 0.5))
+	local panel = UIFactory.Panel(screen :: ScreenGui, "InventoryPanel", UDim2.new((47 / 50), 0, (21 / 25), 0), UDim2.fromScale((1 / 2), (1 / 2)))
 	local constraint = Instance.new("UISizeConstraint")
 	constraint.MinSize = Vector2.new(320, 300)
 	constraint.MaxSize = Vector2.new(850, 700)
@@ -124,7 +124,7 @@ function InventoryController.Init(context: any)
 	pendingLabel = UIFactory.Text(panel, "", UDim2.new(1, -44, 0, 64), UDim2.fromOffset(22, 96), 15, Theme.Colors.Risk)
 	(pendingLabel :: TextLabel).TextXAlignment = Enum.TextXAlignment.Center
 	(pendingLabel :: TextLabel).BackgroundColor3 = Theme.Colors.SurfaceRaised
-	(pendingLabel :: TextLabel).BackgroundTransparency = 0.15
+	(pendingLabel :: TextLabel).BackgroundTransparency = (3 / 20)
 	UIFactory.Round(pendingLabel :: TextLabel, 10)
 	content = Instance.new("ScrollingFrame")
 	content.Name = "Content"

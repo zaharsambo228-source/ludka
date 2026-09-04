@@ -1,7 +1,11 @@
 --!strict
 
-local controllersFolder = script.Parent:FindFirstChild("Controllers")
-local clientFolder = script.Parent:FindFirstChild("Client")
+-- StarterPlayerScripts descendants are copied into PlayerScripts by the engine.
+-- On some Studio builds a LocalScript can start before all sibling folders have
+-- finished parenting, so wait for them instead of treating the brief race as a
+-- permanently broken project tree.
+local controllersFolder = script.Parent:WaitForChild("Controllers", 10)
+local clientFolder = script.Parent:WaitForChild("Client", 10)
 assert(controllersFolder and controllersFolder:IsA("Folder"), "StarterPlayerScripts.Controllers is missing")
 assert(clientFolder and clientFolder:IsA("Folder"), "StarterPlayerScripts.Client is missing")
 

@@ -112,3 +112,7 @@ Expected result: `[WorldLayoutTests] PASS (17 checks)`. Generated map geometry a
 `GameConfig.PlayerData.UseMockDataInStudio` is currently `true`. Studio profiles persist only for the current Studio server session and reset when it restarts.
 
 Do not disable mock data against a production place. Real DataStore testing requires a separately published test place and **Enable Studio Access to API Services**.
+
+## macOS Studio locale compatibility
+
+The current test machine uses the `ru_RU` macOS region, and Roblox Studio has emitted `Malformed number` for ordinary decimal Luau literals. Project source therefore expresses fractional constants as arithmetic fractions such as `(1 / 20)` instead of `0.05`. Keep `src/**/*.lua` free of decimal literals until Studio no longer reproduces the parser issue. If a player spawns over an empty void, check Studio Output or the latest Roblox Studio log for `Malformed number` before debugging world generation.
