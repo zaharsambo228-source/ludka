@@ -42,7 +42,8 @@ Then:
 Expected server messages include:
 
 ```text
-[BrainrotTower] Server bootstrap loaded 12 services
+[BrainrotTower] Server bootstrap loaded 13 services
+[BrainrotTower] World generated: lobby, 6 farm plots, 5 tower floors
 [Balance] Config v2
 ```
 
@@ -97,6 +98,14 @@ require(game.ServerScriptService.Services.BalanceDebugService).PrintReport()
 ```
 
 Multiplayer/disconnect scenarios must be tested through **Test → Start** with at least two players. Follow `STAGE15_RECOVERY_TESTS.md` for the full checklist.
+
+To verify the generated lobby, six farm plots, and five physical Tower floors, run in the Server Command Bar:
+
+```lua
+print(require(game.ServerScriptService.Tests.WorldLayoutTests).Run())
+```
+
+Expected result: `[WorldLayoutTests] PASS (17 checks)`. Generated map geometry appears only after the Studio server enters Play/Test mode.
 
 ## Studio data safety
 

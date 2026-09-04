@@ -7,6 +7,7 @@ local SERVICE_NAMES = {
 	"PlayerDataService",
 	"AntiExploitService",
 	"BalanceDebugService",
+	"WorldBuilderService",
 	"GameService",
 	"RunService",
 	"RoomService",

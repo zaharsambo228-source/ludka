@@ -22,6 +22,7 @@ local BalanceConfig = require(BalanceConfigModule)
 local GameConfig = require(GameConfigModule)
 local RoomDefinitions = require(RoomDefinitionsModule)
 local Types = require(TypesModule)
+local WorldGeometry = require(Shared:FindFirstChild("WorldGeometry") :: ModuleScript)
 
 local roomInternal = script.Parent:FindFirstChild("Room")
 assert(roomInternal and roomInternal:IsA("Folder"), "Services.Room is missing")
@@ -154,6 +155,13 @@ local function chooseRandomRoomType(runId: string): string
 	local selected = choices[roomRandom:NextInteger(1, #choices)]
 	lastRoomTypeByRunId[runId] = selected
 	return selected
+end
+
+local function definitionForTier(authoredDefinition: any, tier: number): any
+	local definition = {}
+	for key, value in authoredDefinition do definition[key] = value end
+	definition.ArenaOrigin = WorldGeometry.GetTowerTierOrigin(tier)
+	return definition
 end
 
 local function trackConnection(session: RoomSession, connection: RBXScriptConnection)
@@ -472,9 +480,9 @@ function RoomService.Start(runId: string, roomType: string?): (RoomSnapshot?, st
 	end
 
 	local selectedRoomType = roomType or chooseRandomRoomType(runId)
-	local definition = RoomDefinitions[selectedRoomType]
+	local authoredDefinition = RoomDefinitions[selectedRoomType]
 	local roomBalance = BalanceConfig.Rooms[selectedRoomType]
-	if definition == nil or roomBalance == nil then
+	if authoredDefinition == nil or roomBalance == nil then
 		return nil, "UNKNOWN_ROOM_TYPE"
 	end
 
@@ -488,6 +496,7 @@ function RoomService.Start(runId: string, roomType: string?): (RoomSnapshot?, st
 
 	local tier = math.clamp(run.Stage, 1, #roomBalance.Tiers)
 	local difficulty = roomBalance.Tiers[tier]
+	local definition = definitionForTier(authoredDefinition, tier)
 	local requiredProgress = if selectedRoomType == "ReactorRun"
 		then difficulty.BaseCells + math.max(#participants - 1, 0) * difficulty.CellsPerAdditionalPlayer
 		elseif selectedRoomType == "SignalSequence"

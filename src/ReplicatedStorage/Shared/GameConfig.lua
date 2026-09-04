@@ -1,7 +1,7 @@
 --!strict
 
 local GameConfig = {
-	ConfigVersion = 1,
+	ConfigVersion = 2,
 	GameName = "Brainrot Tower",
 	PlayerData = table.freeze({
 		SchemaVersion = 5,
@@ -24,8 +24,23 @@ local GameConfig = {
 		MaxSlots = 6,
 		DefaultUnlockedSlots = 2,
 		PlotsPerRow = 3,
-		PlotSpacingX = 48,
-		PlotSpacingZ = 38,
+		PlotSpacingX = 58,
+		PlotSpacingZ = 52,
+		DistrictOrigin = Vector3.new(0, 0, -118),
+		PlotSize = Vector3.new(50, 1, 44),
+	}),
+	World = table.freeze({
+		LobbyOrigin = Vector3.new(0, 0, 24),
+		LobbySize = Vector3.new(170, 4, 108),
+		LobbySpawn = CFrame.new(0, 4, 18),
+		FarmDistrictOrigin = Vector3.new(0, -3, -92),
+		FarmDistrictSize = Vector3.new(230, 4, 142),
+		TowerOrigin = Vector3.new(0, 0, 220),
+		TowerTierHeight = 58,
+		TowerFoundationSize = Vector3.new(104, 4, 104),
+		TowerApproachLength = 142,
+		TowerGateDistance = 14,
+		TowerGateHoldSeconds = 0.35,
 	}),
 	Run = table.freeze({
 		MinPlayers = 1,

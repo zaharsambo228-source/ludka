@@ -4,6 +4,7 @@ local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local BalanceConfig = require(ReplicatedStorage.Shared.BalanceConfig)
+local WorldGeometry = require(ReplicatedStorage.Shared.WorldGeometry)
 
 local RARITY_COLORS = {
 	Common = Color3.fromRGB(168, 168, 168),
@@ -14,9 +15,9 @@ local RARITY_COLORS = {
 }
 
 local UPGRADE_TERMINAL_LAYOUT = {
-	{ UpgradeId = "SlotUnlock", X = -11 },
+	{ UpgradeId = "SlotUnlock", X = -14 },
 	{ UpgradeId = "FarmEfficiency", X = 0 },
-	{ UpgradeId = "OfflineStorage", X = 11 },
+	{ UpgradeId = "OfflineStorage", X = 14 },
 }
 
 local PlotBuilder = {}
@@ -56,7 +57,7 @@ end
 local function slotOffset(slotIndex: number): Vector3
 	local column = (slotIndex - 1) % 3
 	local row = math.floor((slotIndex - 1) / 3)
-	return Vector3.new((column - 1) * 10, 0.4, -5 + row * 10)
+	return Vector3.new((column - 1) * 13, 0.4, -6 + row * 12)
 end
 
 local function createSlot(plot: Model, ownerUserId: number, slotIndex: number, origin: Vector3)
@@ -86,15 +87,8 @@ local function createSlot(plot: Model, ownerUserId: number, slotIndex: number, o
 	)
 end
 
-function PlotBuilder.GetOrigin(plotIndex: number, config: any): Vector3
-	local zeroBased = plotIndex - 1
-	local column = zeroBased % config.PlotsPerRow
-	local row = math.floor(zeroBased / config.PlotsPerRow)
-	local horizontalIndex = if column == 0
-		then 0
-		elseif column % 2 == 1 then (column + 1) / 2
-		else -column / 2
-	return Vector3.new(horizontalIndex * config.PlotSpacingX, 0, row * config.PlotSpacingZ)
+function PlotBuilder.GetOrigin(plotIndex: number, _config: any): Vector3
+	return WorldGeometry.GetFarmPlotOrigin(plotIndex)
 end
 
 function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number, config: any): Model
@@ -111,7 +105,7 @@ function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number,
 	base.CanCollide = true
 	base.Color = Color3.fromRGB(56, 80, 58)
 	base.Material = Enum.Material.Grass
-	base.Size = Vector3.new(36, 1, 28)
+	base.Size = config.PlotSize
 	base.Position = origin + Vector3.new(0, -0.5, 0)
 	base.TopSurface = Enum.SurfaceType.Smooth
 	base.BottomSurface = Enum.SurfaceType.Smooth
@@ -137,7 +131,7 @@ function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number,
 	terminal.Color = Color3.fromRGB(35, 43, 54)
 	terminal.Material = Enum.Material.Metal
 	terminal.Size = Vector3.new(8, 4, 2)
-	terminal.Position = origin + Vector3.new(0, 2, 12)
+	terminal.Position = origin + Vector3.new(0, 2, 18)
 	terminal:SetAttribute("OwnerUserId", player.UserId)
 	terminal.Parent = plot
 
@@ -170,7 +164,7 @@ function PlotBuilder.Create(parent: Instance, player: Player, plotIndex: number,
 		upgradeTerminal.Color = Color3.fromRGB(42, 48, 66)
 		upgradeTerminal.Material = Enum.Material.Metal
 		upgradeTerminal.Size = Vector3.new(8, 4, 2)
-		upgradeTerminal.Position = origin + Vector3.new(terminalLayout.X, 2, -12)
+		upgradeTerminal.Position = origin + Vector3.new(terminalLayout.X, 2, -18)
 		upgradeTerminal:SetAttribute("OwnerUserId", player.UserId)
 		upgradeTerminal:SetAttribute("UpgradeId", terminalLayout.UpgradeId)
 		upgradeTerminal.Parent = upgradeTerminals
